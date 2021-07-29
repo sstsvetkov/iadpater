@@ -1,0 +1,41 @@
+version: '2.2'
+
+services:
+  web:
+    restart: unless-stopped
+    container_name: iadapter_api
+    env_file:
+      - .env.dev
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    ports:
+      - 127.0.0.1:4444:4444
+    depends_on:
+      - db
+    command: python /user/src/iadapter/main.py
+    volumes:
+      - ./data/:/usr/src/data/
+      - ./src/:/user/src/iadapter/
+  db:
+    image: postgres
+    restart: always
+    container_name: iadapter_db
+    env_file:
+      - .env.dev
+    ports:
+    - 5432:5432
+#    environment:
+#      POSTGRES_USER: ${POSTGRES_USER}
+#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+#  email_adapter:
+##    restart: unless-stopped
+#    env_file:
+#      - .env.dev
+#    build:
+#      context: ./mailadapter/src
+#      dockerfile: Dockerfile
+#    command: python main.py
