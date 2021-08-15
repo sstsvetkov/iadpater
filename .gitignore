@@ -134,4 +134,3 @@ dmypy.json
 .idea
 /deploy.bat
 /docker_push.bat
-*.xlsx
