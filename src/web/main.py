@@ -1,7 +1,4 @@
-import logging
-
 from aiohttp import web
-import asyncpg
 from ldap3 import Server, Connection, ALL, NTLM
 import requests
 from requests_ntlm import HttpNtlmAuth
@@ -13,7 +10,8 @@ from hashlib import sha256
 from openpyxl import load_workbook
 import logging
 
-from data.db import Database
+from src.models.db import Database
+from src.models.phone import Phone
 
 phone_to_employeeid = {}
 
@@ -229,8 +227,8 @@ def parse_phone(phone: str) -> int:
 
 
 def get_extra_user(phone):
-    contractors_file = "../data/users.xlsx"
-    partners_file = "../data/partners.xlsx"
+    contractors_file = "../../data/users.xlsx"
+    partners_file = "../../data/partners.xlsx"
     user = get_user_xlsx(partners_file, phone)
     if user is not None:
         user["position"] = "Партнёр"
@@ -273,7 +271,7 @@ def get_user_xlsx(file, phone):
 
 
 def get_user(phone):
-    file = "../data/users.txt"
+    file = "../../data/users.txt"
 
     try:
         phone = parse_phone(phone)
@@ -400,11 +398,6 @@ async def handle_add_user_phone(request):
 async def init_app():
     app = web.Application()
     db = await Database.get_connection()
-    from src.data.phones.phones import Phone
-    phone = await Phone("kek", "kekl").save()
-    print(phone)
-    # phone = await Phone.get(user_id="kek", phone="kekl")
-    # print(phone)
     app["db"] = db
     app.add_routes([web.post("/laps", handle_laps)])
     app.add_routes([web.post("/bio", handle_bio)])

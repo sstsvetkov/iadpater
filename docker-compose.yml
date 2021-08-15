@@ -32,8 +32,8 @@ services:
     env_file:
       - .env
     build:
-      context: ./mailadapter/src
-      dockerfile: Dockerfile
+      context: src/mailadapter/src
+      dockerfile: src/mailadapter/Dockerfile
     command: python main.py
 
 networks:
