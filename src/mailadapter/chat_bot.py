@@ -2,7 +2,7 @@ import logging
 
 import requests
 
-from src.mailadapter.settings import AUTOFAQ_SERVICE_HOST, DEBUG
+from mailadapter.settings import AUTOFAQ_SERVICE_HOST, DEBUG
 
 
 def send_to_user(user_id, message, image=None):

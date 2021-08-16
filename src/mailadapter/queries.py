@@ -1,8 +1,7 @@
 from asyncpg import UniqueViolationError
 
-from src.mailadapter.user_info import UserInfo
-from src.models.db import Database
-
+from mailadapter.user_info import UserInfo
+from models.db import Database
 from settings import logging
 
 """

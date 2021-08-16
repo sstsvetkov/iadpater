@@ -1,20 +1,15 @@
-import imaplib
 import smtplib
 from email.header import decode_header, Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from re import search
 
-from src.mailadapter.settings import (
+from settings import (
     SMTP_FROM,
     IMAP_HOST,
-    ITIL_EMAIL,
-    IMAP_USER,
-    IMAP_PASSWD,
-    IMAP_PORT,
 )
-from src.mailadapter.user_info import UserInfo
-from src.mailadapter.utils import parse_phone
+from mailadapter.user_info import UserInfo
+from mailadapter.utils import parse_phone
 
 
 def parse_email_closed(body: str) -> UserInfo or ValueError:

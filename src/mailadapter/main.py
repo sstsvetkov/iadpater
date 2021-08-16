@@ -4,16 +4,16 @@ from datetime import datetime
 from email.parser import BytesParser
 
 from settings import *
-from src.mailadapter import queries
-from src.mailadapter.chat_bot import get_tg_id, send_to_user
-from src.mailadapter.mail import (
+from mailadapter import queries
+from mailadapter.chat_bot import get_tg_id, send_to_user
+from mailadapter.mail import (
     get_email_body,
     decode_email_header,
     parse_email_closed,
     parse_email_created,
     send_mail,
 )
-from src.mailadapter.user_info import UserInfo
+from user_info import UserInfo
 
 email_guide = """
 ОТКРЫТИЕ ПОЧТЫ НЕ ИЗ СЕТИ ДИКСИ:

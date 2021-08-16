@@ -1,7 +1,7 @@
-from os import environ
 import logging
+from os import environ
 
-DEBUG = environ.get('DEBUG', False)
+DEBUG = environ.get("DEBUG", False)
 IMAP_HOST = environ.get("IMAP_HOST")
 IMAP_PORT = environ.get("IMAP_PORT")
 IMAP_USER = environ.get("IMAP_USER")

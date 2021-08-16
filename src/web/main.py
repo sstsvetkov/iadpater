@@ -1,17 +1,17 @@
+import base64
+import json
+import logging
+import os
+import re
+from hashlib import sha256
+
+import requests
 from aiohttp import web
 from ldap3 import Server, Connection, ALL, NTLM
-import requests
-from requests_ntlm import HttpNtlmAuth
-import re
-import json
-import base64
-import os
-from hashlib import sha256
 from openpyxl import load_workbook
-import logging
+from requests_ntlm import HttpNtlmAuth
 
 from src.models.db import Database
-from src.models.phone import Phone
 
 phone_to_employeeid = {}
 
