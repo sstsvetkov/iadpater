@@ -1,16 +1,18 @@
-import imaplib
-import re
-import smtplib
-from typing import TypedDict
-from email.header import decode_header
-from email.parser import BytesParser
-from time import sleep
-
 import asyncio
-import requests
+import imaplib
+from datetime import datetime
+from email.parser import BytesParser
 
 from settings import *
 from src.mailadapter import queries
+from src.mailadapter.chat_bot import get_tg_id, send_to_user
+from src.mailadapter.mail import (
+    get_email_body,
+    decode_email_header,
+    parse_email_closed,
+    parse_email_created,
+    send_mail,
+)
 from src.mailadapter.user_info import UserInfo
 
 email_guide = """
@@ -42,134 +44,81 @@ async def read_messages(imap):
             body = get_email_body(msg)
             try:
                 user_info: UserInfo = parse_email_closed(body)
+                await handle_order_closed(user_info)
             except ValueError:
                 logging.exception("Failed to parse email")
-                break
-            await handle_order_closed(user_info)
 
-        elif "Зарегистрировано Обр.№" in subject:
+        elif "Зарегистрировано Обр." in subject:
             body = get_email_body(msg)
             try:
                 user_info: UserInfo = parse_email_created(body)
+                await handle_order_create(user_info)
             except ValueError:
                 logging.exception("Failed to parse email")
     imap.expunge()
 
 
 async def handle_order_closed(user_info: UserInfo):
-    try:
-        record = await queries.get(user_id=user_info["user_id"])
-        if record['send_date'] is not None:
+    record = await queries.get(user_id=user_info["user_id"])
+    if record:
+        if record["send_date"] is not None:
+            # Данные уже были отправлены
             return
-    except Exception:
-        pass
-    telegram_user_id = get_tg_id(user_info["phone"])
-    if telegram_user_id:
-        send_to_user(telegram_user_id, user_info["message"])
-        send_to_user(telegram_user_id, email_guide)
-        send_to_user(telegram_user_id, "", "sky.dixy.jpg")
-        send_to_user(telegram_user_id, vpn_guide)
+        user_info["user_tg_id"] = record["user_tg_id"]
 
-
-def parse_email_closed(body: str) -> UserInfo or ValueError:
-    try:
-        result = re.search("Табельный номер:(.*)ФИО:(.*)Номер телефона:(.*)\\D", body)
-        user_id = result.group(1).strip()
-        fio = result.group(2).strip()
-        phone = parse_phone(result.group(3).strip())
-        msg = (
-            body.split("---------------------------", 1)[1]
-            .replace("Ответственный", "\nОтветственный")
-            .replace("Наряд", "\nНаряд")
-            .replace("Решение", "\nРешение")
-        )
-        return {"user_id": user_id, "phone": phone, "fio": fio, "msg": msg}
-    except Exception as e:
-        raise ValueError from e
-
-
-def parse_email_created(body: str) -> UserInfo or ValueError:
-    try:
-        pass
-    except Exception as e:
-        raise ValueError from e
-
-
-def get_email_body(msg):
-    body = None
-    if msg.is_multipart():
-        # iterate over email parts
-        for part in msg.walk():
-            # extract content type of email
-            content_type = part.get_content_type()
-            if content_type == "text/plain":
-                # get the email body
-                body = part.get_payload(decode=True)
-                if body is not None:
-                    body = body.decode(encoding="utf-8")
-    return body
-
-
-def decode_email_header(header):
-    header_bytes, encoding = decode_header(header)[0]
-    if encoding is None:
-        return header_bytes
-    return header_bytes.decode(encoding)
-
-
-def send_to_user(user_id, message, image=None):
-    if image is None:
-        response = requests.get(
-            f"https://api.telegram.org/bot1335882907:AAEBfQIQESeXkRCWMsrIwkoUr8NLhK9S7Wc/sendMessage?chat_id={user_id}&text={message}"
-        )
+        is_success = send_to_user(user_info["user_tg_id"], user_info["message"])
+        send_to_user(user_info["user_tg_id"], email_guide)
+        send_to_user(user_info["user_tg_id"], "", "sky.dixy.jpg")
+        send_to_user(user_info["user_tg_id"], vpn_guide)
+        if is_success:
+            user_info["date"] = datetime.now().strftime("%d.%m.%Y")
+            send_to_itil(user_info)
+            await queries.msg_send(user_info)
     else:
-        files = {"photo": open(image, "rb")}
-        response = requests.post(
-            f"https://api.telegram.org/bot1335882907:AAEBfQIQESeXkRCWMsrIwkoUr8NLhK9S7Wc/sendPhoto?chat_id={user_id}&caption={message}",
-            files=files,
-        )
+        # Данные ещё не отправлялись
+        try:
+            tg_info = get_tg_id(user_id=user_info["user_id"])
+            if tg_info:
+                user_info["user_tg_id"], user_info["phone"] = tg_info
+                is_success = send_to_user(user_info["user_tg_id"], user_info["message"])
+                send_to_user(user_info["user_tg_id"], email_guide)
+                send_to_user(user_info["user_tg_id"], "", "sky.dixy.jpg")
+                send_to_user(user_info["user_tg_id"], vpn_guide)
+                if is_success:
+                    user_info["date"] = datetime.now().strftime("%d.%m.%Y")
+                send_to_itil(user_info)
+                await queries.msg_send(user_info=user_info)
+        except Exception:
+            logging.exception("Failed send to itil")
 
-    if response.status_code == 200:
-        logging.info(f" Message send. Userid: {user_id}.\n" f"Msg: {message}")
-    else:
-        logging.error(
-            f" Message not send. Status code: {response.status_code}. Userid: {user_id}.\n"
-            f"Msg: {message}"
-        )
-    return response.status_code == 200
 
-
-def get_tg_id(phone) -> int or None:
-    params = {"serviceId": "373a98b7-6b91-4701-84e9-2276ea27f254"}
-    data = {
-        "and": [
-            {
-                "field": {"static": "ChannelId"},
-                "in": ["0d33b11c-20af-4781-a992-9e8aef0cc3b5"],
-            },
-            {"field": {"payload": "userPhone"}, "ilike": f"%{phone}%"},
-        ]
-    }
-    response = requests.post(
-        f"http://{AUTOFAQ_SERVICE_HOST}/api/channelUserResolver",
-        params=params,
-        json=data,
+def send_to_itil(user_info: UserInfo):
+    subject = (
+        "Событие: пользователь авторизовался в чат боте"
+        if "data" in user_info
+        else "Событие: чат бот отравил сообщение пользователю"
     )
-    response_json = response.json()
-    if response_json:
-        return response_json[0].get("id", None)
-    return None
+    text = f"#Табельный номер={user_info['user_id']}#\t\n#Номер телефона=7{user_info['phone']}#\t\n#Авторизация пользователя в боте (поделиться номером)={str(bool(user_info['user_tg_id'])).lower()}#\t\n#Отправлено сообщение={str(bool(user_info.get('date', False))).lower()}#\t\n#Дата отправки={user_info.get('date', 'null')}#"
+
+    send_mail(ITIL_EMAIL, subject=subject, text=text)
 
 
-def parse_phone(phone: str) -> int:
-    phone = "".join(re.findall(r"\d+", phone))
-    if len(phone) < 10:
-        raise ValueError
-    try:
-        phone = int(phone[len(phone) - 10 :])
-    except:
-        raise ValueError
-    return phone
+async def handle_order_create(user_info: UserInfo):
+    record = await queries.get(user_id=user_info["user_id"])
+    if record:
+        if record["user_tg_id"] is not None:
+            # Данные уже были отправлены
+            return
+    else:
+        # Данные ещё не отправлялись
+        try:
+            tg_info = get_tg_id(user_id=user_info["user_id"])
+            if tg_info:
+                user_info["user_tg_id"], user_info["phone"] = tg_info
+                send_to_itil(user_info)
+                await queries.new_order(user_info)
+        except Exception:
+            logging.exception("Failed send to itil")
 
 
 async def connect():
@@ -177,6 +126,7 @@ async def connect():
         try:
             imap = imaplib.IMAP4_SSL(IMAP_HOST, port=IMAP_PORT)
             imap.login(IMAP_USER, IMAP_PASSWD)
+            logging.info("Connecting to mail server")
             return imap
         except Exception as e:
             if attempt == 2:
@@ -192,16 +142,8 @@ async def main():
                 await read_messages(imap)
                 await asyncio.sleep(DELAY)
             except Exception:
+                logging.exception(msg="Error")
                 break
-
-
-def send_mail(toaddrs, subject, text):
-    fromaddr = SMTP_FROM
-    msg = f"Subject: {subject}\n\n{text}"
-    server = smtplib.SMTP(IMAP_HOST)
-    # server.login(user=IMAP_USER, password=IMAP_PASSWD)
-    server.sendmail(fromaddr, toaddrs, msg)
-    server.quit()
 
 
 async def async_main():
@@ -215,5 +157,5 @@ async def async_main():
 
 if __name__ == "__main__":
     # asyncio.run(async_main())
-    # send_mail()
+    asyncio.run(main())
     pass

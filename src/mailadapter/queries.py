@@ -16,16 +16,18 @@ creation_date timestamp not null default current_timestamp
 """
 
 
-async def new_order(user_id, full_name):
+async def new_order(user_info: UserInfo):
     try:
         db = await Database.get_connection()
         await db.execute(
             """
-            INSERT INTO records(user_id, full_name)
-            VALUES ($1, $2)
+            INSERT INTO records(user_id, full_name, phone, user_tg_id)
+            VALUES ($1, $2, $3, $4)
             """,
-            user_id,
-            full_name,
+            user_info["user_id"],
+            user_info["full_name"],
+            user_info["phone"],
+            user_info["user_tg_id"],
         )
     except UniqueViolationError as e:
         logging.error(e)
@@ -54,13 +56,14 @@ async def msg_send(user_info: UserInfo):
             SET user_tg_id = excluded.user_tg_id,
                 phone = excluded.phone,
                 message = excluded.message,
-                full_name = excluded.full_name
+                full_name = excluded.full_name,
+                send_date = excluded.send_date
         """,
-        user_info['user_id'],
+        user_info["user_id"],
         user_info["user_tg_id"],
-        user_info['phone'],
-        user_info['message'],
-        user_info['full_name']
+        user_info["phone"],
+        user_info["message"],
+        user_info["full_name"],
     )
 
 
@@ -91,5 +94,5 @@ async def get(user_id):
         SELECT * FROM records
         WHERE user_id=$1
         """,
-        user_id
+        user_id,
     )
