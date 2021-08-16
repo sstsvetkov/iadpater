@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file src/web/Dockerfile --tag averniko/iadapter:web .
+      run: docker build --tag averniko/iadapter:web ./src/web
