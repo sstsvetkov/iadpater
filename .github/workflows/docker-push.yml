@@ -1,3 +1,4 @@
+
 name: Publish Docker
 
 on:
@@ -11,10 +12,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: docker/build-push-action@v1
+      - uses: docker/build-push-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: excalidraw/excalidraw
+          repository: averniko/iadapter
           tag_with_ref: true
           tag_with_sha: true
