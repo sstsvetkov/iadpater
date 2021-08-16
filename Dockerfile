@@ -1,8 +1,8 @@
 FROM python:3.8-alpine
-WORKDIR /usr/src/mailadpter
+WORKDIR /usr/src/iadapter
 
 RUN apk update \
-    && apk add gcc libc-dev libffi-dev openssl-dev python3-dev cargo rust
+    && apk add gcc libc-dev libffi-dev openssl-dev python3-dev
 
 RUN pip install --upgrade pip
 COPY requirements.txt .

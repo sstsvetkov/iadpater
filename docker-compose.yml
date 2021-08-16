@@ -33,7 +33,7 @@ services:
       - .env
     build:
       context: src/mailadapter/src
-      dockerfile: src/mailadapter/Dockerfile
+      dockerfile: Dockerfile
     command: python main.py
 
 networks:
