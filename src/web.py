@@ -1,6 +1,5 @@
 import base64
 import json
-import logging
 import os
 import re
 from hashlib import sha256
@@ -11,9 +10,9 @@ from ldap3 import Server, Connection, ALL, NTLM
 from openpyxl import load_workbook
 from requests_ntlm import HttpNtlmAuth
 
-from src.models.db import Database
-
-phone_to_employeeid = {}
+from models.db import Database
+from web.queries import get, add_phone
+from web.settings import *
 
 
 def laps(server, user, password, computer_name):
@@ -227,8 +226,8 @@ def parse_phone(phone: str) -> int:
 
 
 def get_extra_user(phone):
-    contractors_file = "../../data/users.xlsx"
-    partners_file = "../../data/partners.xlsx"
+    contractors_file = DATA_DIR / "users.xlsx"
+    partners_file = DATA_DIR / "partners.xlsx"
     user = get_user_xlsx(partners_file, phone)
     if user is not None:
         user["position"] = "Партнёр"
@@ -270,8 +269,8 @@ def get_user_xlsx(file, phone):
     return None
 
 
-def get_user(phone):
-    file = "../../data/users.txt"
+async def get_user(phone):
+    file = DATA_DIR / "users.txt"
 
     try:
         phone = parse_phone(phone)
@@ -340,11 +339,13 @@ def get_user(phone):
 
     matches = [i for i in users if i["phone"] == phone]
 
-    if len(matches) == 0 and phone in phone_to_employeeid:
-        for user in users:
-            if user["user_num"] == phone_to_employeeid[phone]:
-                user["phone"] = phone
-                matches.append(user)
+    if len(matches) == 0:
+        res = await get(phone=str(phone))
+        if res:
+            for user in users:
+                if user["user_num"] == res["user_id"]:
+                    user["phone"] = phone
+                    matches.append(user)
 
     extra = get_extra_user(phone)
     if extra:
@@ -362,7 +363,7 @@ async def handle_get_user(request):
         request.headers["Authorization"].encode("utf-8")
     ).hexdigest() == os.environ.get("SECRET_SHA256"):
         if phone is not None:
-            service = get_user(str(phone).strip())
+            service = await get_user(str(phone).strip())
         else:
             service = {"state": False}
         return web.Response(
@@ -384,7 +385,7 @@ async def handle_add_user_phone(request):
         if (phone and employee_id) is not None:
             try:
                 phone = parse_phone(str(phone).strip())
-                phone_to_employeeid[phone] = str(employee_id)
+                await add_phone(user_id=employee_id, phone=str(phone))
             except ValueError:
                 web.Response(status=400)
         else:

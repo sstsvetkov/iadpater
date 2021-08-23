@@ -3,17 +3,7 @@ import imaplib
 from datetime import datetime
 from email.parser import BytesParser
 
-from settings import *
-from mailadapter import queries
-from mailadapter.chat_bot import get_tg_id, send_to_user
-from mailadapter.mail import (
-    get_email_body,
-    decode_email_header,
-    parse_email_closed,
-    parse_email_created,
-    send_mail,
-)
-from user_info import UserInfo
+from mailadapter import *
 
 email_guide = """
 ОТКРЫТИЕ ПОЧТЫ НЕ ИЗ СЕТИ ДИКСИ:
@@ -30,6 +20,7 @@ https://youtu.be/CiQ-v_MnK0Q - Настройка OpenVPN и подключен�
 https://youtu.be/P3RZDWBI-zo - Настройка VPN на iOS
 """
 
+SKY_DIXY_PATH = BASE_DIR / "src/mailadapter/sky.dixy.jpg"
 
 async def read_messages(imap):
     imap.select("Inbox")
@@ -68,7 +59,7 @@ async def handle_order_closed(user_info: UserInfo):
 
         is_success = send_to_user(user_info["user_tg_id"], user_info["message"])
         send_to_user(user_info["user_tg_id"], email_guide)
-        send_to_user(user_info["user_tg_id"], "", "sky.dixy.jpg")
+        send_to_user(user_info["user_tg_id"], "", SKY_DIXY_PATH)
         send_to_user(user_info["user_tg_id"], vpn_guide)
         if is_success:
             user_info["date"] = datetime.now().strftime("%d.%m.%Y")
@@ -82,7 +73,7 @@ async def handle_order_closed(user_info: UserInfo):
                 user_info["user_tg_id"], user_info["phone"] = tg_info
                 is_success = send_to_user(user_info["user_tg_id"], user_info["message"])
                 send_to_user(user_info["user_tg_id"], email_guide)
-                send_to_user(user_info["user_tg_id"], "", "sky.dixy.jpg")
+                send_to_user(user_info["user_tg_id"], "", SKY_DIXY_PATH)
                 send_to_user(user_info["user_tg_id"], vpn_guide)
                 if is_success:
                     user_info["date"] = datetime.now().strftime("%d.%m.%Y")
@@ -146,16 +137,5 @@ async def main():
                 break
 
 
-async def async_main():
-    # await new_order(user_id="ДЮ-121212", full_name=None)
-    # await queries.msg_send(
-    #     user_id="ДЮ-121212", full_name="kek", phone="123", user_tg_id="1245", message="msg"
-    #
-    r = await queries.get(user_id="ДЮ-121212")
-    print(r)
-
-
 if __name__ == "__main__":
-    # asyncio.run(async_main())
     asyncio.run(main())
-    pass

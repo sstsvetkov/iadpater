@@ -11,10 +11,9 @@ services:
       - 127.0.0.1:4444:4444
     depends_on:
       - db
-    command: python /user/src/iadapter/main.py
+    command: python ./src/web.py
     volumes:
       - ./data/:/usr/src/data/
-      - ./src/:/user/src/iadapter/
   db:
     image: postgres
     restart: always
@@ -29,12 +28,13 @@ services:
     - ./init.sql:/docker-entrypoint-initdb.d/init.sql
   email_adapter:
 #    restart: unless-stopped
+    container_name: iadapter_email_adapter
     env_file:
       - .env
     build:
-      context: src/mailadapter/src
+      context: .
       dockerfile: Dockerfile
-    command: python main.py
+    command: python ./src/mail_adapter.py
 
 networks:
   default:

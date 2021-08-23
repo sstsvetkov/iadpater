@@ -4,7 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from re import search
 
-from settings import (
+from mailadapter.settings import (
     SMTP_FROM,
     IMAP_HOST,
 )

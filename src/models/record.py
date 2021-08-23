@@ -1,4 +1,4 @@
-from src.models.model import Model
+from models.model import Model
 
 """
 row_id SERIAL NOT NULL PRIMARY KEY,

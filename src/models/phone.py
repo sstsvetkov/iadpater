@@ -1,5 +1,5 @@
-from src.models.db import Database
-from src.models.model import Model
+from models.db import Database
+from models.model import Model
 
 
 class Phone(Model):

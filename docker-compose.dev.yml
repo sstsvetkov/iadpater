@@ -7,16 +7,16 @@ services:
     env_file:
       - .env.dev
     build:
-      context: ./src
-      dockerfile: src/web/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     ports:
       - 127.0.0.1:4444:4444
     depends_on:
       - db
-    command: python /user/src/iadapter/main.py
+    command: python ./src/web.py
+#    command: tail -F anything
     volumes:
-      - ./data/:/usr/src/data/
-      - ./src/:/user/src/iadapter/
+      - ./data/:/data/
   db:
     image: postgres
     restart: always
@@ -27,11 +27,14 @@ services:
     - 5432:5432
     volumes:
     - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-#  email_adapter:
-##    restart: unless-stopped
-#    env_file:
-#      - .env.dev
-#    build:
-#      context: ./mailadapter/src
-#      dockerfile: Dockerfile
-#    command: python main.py
+  email_adapter:
+#    restart: unless-stopped
+    container_name: iadapter_email_adapter
+    env_file:
+      - .env.dev
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python ./src/mail_adapter.py

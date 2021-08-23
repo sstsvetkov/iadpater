@@ -1,4 +1,5 @@
 import logging
+from typing import Tuple
 
 import requests
 
@@ -30,7 +31,7 @@ def send_to_user(user_id, message, image=None):
     return response.status_code == 200
 
 
-def get_tg_id(phone=None, user_id=None) -> tuple[str, str] or None:
+def get_tg_id(phone=None, user_id=None) -> Tuple[str, str] or None:
     params = {"serviceId": "373a98b7-6b91-4701-84e9-2276ea27f254"}
     if phone:
         s = {"field": {"payload": "userPhone"}, "ilike": f"%{phone}%"}

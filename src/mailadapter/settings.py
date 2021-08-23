@@ -1,6 +1,9 @@
 import logging
 from os import environ
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = BASE_DIR / "data"
 DEBUG = environ.get("DEBUG", False)
 IMAP_HOST = environ.get("IMAP_HOST")
 IMAP_PORT = environ.get("IMAP_PORT")
@@ -11,4 +14,7 @@ DELAY = int(environ.get("DELAY", 60))
 AUTOFAQ_SERVICE_HOST = environ.get("AUTOFAQ_SERVICE_HOST")
 ITIL_EMAIL = environ.get("ITIL_EMAIL")
 
-logging.basicConfig(level=logging.INFO)
+if DEBUG:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)

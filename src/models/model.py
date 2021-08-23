@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.models.db import Database
+from models.db import Database
 
 
 class Model(ABC):

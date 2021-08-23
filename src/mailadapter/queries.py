@@ -2,7 +2,7 @@ from asyncpg import UniqueViolationError
 
 from mailadapter.user_info import UserInfo
 from models.db import Database
-from settings import logging
+from mailadapter.settings import logging
 
 """
 row_id SERIAL NOT NULL PRIMARY KEY,
