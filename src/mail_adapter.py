@@ -22,6 +22,7 @@ https://youtu.be/P3RZDWBI-zo - Настройка VPN на iOS
 
 SKY_DIXY_PATH = BASE_DIR / "src/mailadapter/sky.dixy.jpg"
 
+
 async def read_messages(imap):
     imap.select("Inbox")
     response, data = imap.search(None, "UNSEEN")
@@ -86,7 +87,7 @@ async def handle_order_closed(user_info: UserInfo):
 def send_to_itil(user_info: UserInfo):
     subject = (
         "Событие: пользователь авторизовался в чат боте"
-        if "data" in user_info
+        if "date" in user_info and user_info["date"]
         else "Событие: чат бот отравил сообщение пользователю"
     )
     text = f"#Табельный номер={user_info['user_id']}#\t\n#Номер телефона=7{user_info['phone']}#\t\n#Авторизация пользователя в боте (поделиться номером)={str(bool(user_info['user_tg_id'])).lower()}#\t\n#Отправлено сообщение={str(bool(user_info.get('date', False))).lower()}#\t\n#Дата отправки={user_info.get('date', 'null')}#"
