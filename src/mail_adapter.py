@@ -86,9 +86,9 @@ async def handle_order_closed(user_info: UserInfo):
 
 def send_to_itil(user_info: UserInfo):
     subject = (
-        "Событие: пользователь авторизовался в чат боте"
+        "Событие: чат бот отравил сообщение пользователю"
         if "date" in user_info and user_info["date"]
-        else "Событие: чат бот отравил сообщение пользователю"
+        else "Событие: пользователь авторизовался в чат боте"
     )
     text = f"#Табельный номер={user_info['user_id']}#\t\n#Номер телефона=7{user_info['phone']}#\t\n#Авторизация пользователя в боте (поделиться номером)={str(bool(user_info['user_tg_id'])).lower()}#\t\n#Отправлено сообщение={str(bool(user_info.get('date', False))).lower()}#\t\n#Дата отправки={user_info.get('date', 'null')}#"
 
