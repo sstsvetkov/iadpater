@@ -14,7 +14,9 @@ from mailadapter.utils import parse_phone
 
 def parse_email_closed(body: str) -> UserInfo or ValueError:
     try:
-        result = search("Табельный номер:(.*)ФИО:(.*)Номер телефона:(.*)\\D", body)
+        print(body)
+        result = search(".*Табельный номер:(.*)\r*\n*.*ФИО:(.*)\r*\n*.*Номер телефона:\D*(.*)\r*\n*", body)
+        print(result)
         user_id = result.group(1).strip()
         fio = result.group(2).strip()
         phone = parse_phone(result.group(3).strip())

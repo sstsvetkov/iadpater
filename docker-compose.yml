@@ -13,27 +13,21 @@ services:
       - db
     command: python ./src/web.py
     volumes:
-      - ./data/:/usr/src/data/
+      - ./data/:/data/
   db:
     image: postgres
     restart: always
     container_name: iadapter_db
     env_file:
       - .env
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
     - ./init.sql:/docker-entrypoint-initdb.d/init.sql
   email_adapter:
+    image: averniko/iadapter:latest
 #    restart: unless-stopped
     container_name: iadapter_email_adapter
     env_file:
       - .env
-    build:
-      context: .
-      dockerfile: Dockerfile
     command: python ./src/mail_adapter.py
 
 networks:
