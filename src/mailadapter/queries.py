@@ -1,8 +1,5 @@
-from asyncpg import UniqueViolationError
-
-from mailadapter.user_info import UserInfo
+from mailadapter.user_info import Record
 from models.db import Database
-from mailadapter.settings import logging
 
 """
 row_id SERIAL NOT NULL PRIMARY KEY,
@@ -15,39 +12,9 @@ creation_date timestamp not null default current_timestamp
 """
 
 
-async def new_order(user_info: UserInfo):
-    try:
-        db = await Database.get_connection()
-        await db.execute(
-            """
-            INSERT INTO records(user_id, full_name, phone, user_tg_id)
-            VALUES ($1, $2, $3, $4)
-            """,
-            user_info["user_id"],
-            user_info["full_name"],
-            user_info["phone"],
-            user_info["user_tg_id"],
-        )
-    except UniqueViolationError as e:
-        logging.error(e)
-
-
-async def greetings(user_id, user_tg_id):
-    db = await Database.get_connection()
-    await db.execute(
-        """
-        UPDATE records
-        SET user_tg_id=$1
-        WHERE user_id=$2
-        """,
-        user_tg_id,
-        user_id,
-    )
-
-
-async def msg_send(user_info: UserInfo):
-    db = await Database.get_connection()
-    await db.execute(
+async def msg_send(record: Record, db=None):
+    db = db or await Database.get_connection()
+    return await db.fetchrow(
         """
         INSERT INTO records(user_id, user_tg_id, phone, message, full_name, send_date)
         VALUES ($1, $2, $3, $4, $5, current_timestamp)
@@ -57,17 +24,18 @@ async def msg_send(user_info: UserInfo):
                 message = excluded.message,
                 full_name = excluded.full_name,
                 send_date = excluded.send_date
+        RETURNING *
         """,
-        user_info["user_id"],
-        user_info["user_tg_id"],
-        user_info["phone"],
-        user_info["message"],
-        user_info["full_name"],
+        record.user_id,
+        record.user_tg_id,
+        record.phone,
+        record.message,
+        record.full_name,
     )
 
 
-async def msg_send_failed(user_id, user_tg_id, phone, message, full_name):
-    db = await Database.get_connection()
+async def update(record: Record, db=None):
+    db = db or await Database.get_connection()
     await db.execute(
         """
         INSERT INTO records(user_id, user_tg_id, phone, message, full_name)
@@ -78,20 +46,29 @@ async def msg_send_failed(user_id, user_tg_id, phone, message, full_name):
                 message = excluded.message,
                 full_name = excluded.full_name
         """,
-        user_id,
-        user_tg_id,
-        phone,
-        message,
-        full_name,
+        record.user_id,
+        record.user_tg_id,
+        record.phone,
+        record.message,
+        record.full_name,
     )
 
 
-async def get(user_id):
-    db = await Database.get_connection()
+async def get(user_id, db=None):
+    db = db or await Database.get_connection()
     return await db.fetchrow(
         """
         SELECT * FROM records
         WHERE user_id=$1
         """,
         user_id,
+    )
+
+
+async def get_all(db=None):
+    db = db or await Database.get_connection()
+    return await db.fetch(
+        """
+        SELECT * FROM records
+        """
     )

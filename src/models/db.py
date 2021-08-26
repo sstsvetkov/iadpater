@@ -13,7 +13,7 @@ class Database(object):
             password=os.environ["POSTGRES_PASSWORD"],
             database=os.environ["POSTGRES_DB"],
             host=os.environ["POSTGRES_DB_HOST"],
-            port=5432,
+            port=os.environ["POSTGRES_DB_PORT"],
         )
 
     @classmethod

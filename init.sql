@@ -23,7 +23,7 @@ create table records
     user_id varchar(64) UNIQUE NOT NULL,
     user_tg_id varchar(64),
     message varchar(2048),
-    phone   integer,
+    phone   varchar(16),
     full_name varchar(128),
     send_date timestamp
 )
