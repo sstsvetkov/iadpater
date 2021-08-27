@@ -16,12 +16,15 @@ from mailadapter.utils import parse_phone
 def parse_email_closed(body: str) -> Record or ValueError:
     try:
         result = search(
-            ".*Табельный номер:(.*)\r*\n*.*ФИО:(.*)\r*\n*.*Номер телефона:\D*(.*)\r*\n*",
+            ".*Табельный номер:(.*)\r*\n*.*ФИО:(.*)\r*\n*.*Номер телефона:(.*)\r*\n*",
             body,
         )
         user_id = result.group(1).strip()
         fio = result.group(2).strip()
-        phone = str(parse_phone(result.group(3).strip()))
+        try:
+            phone = str(parse_phone(result.group(3).strip()))
+        except ValueError or AttributeError:
+            phone = None
         msg = (
             body.split("---------------------------", 1)[1]
             .replace("Ответственный", "\nОтветственный")
