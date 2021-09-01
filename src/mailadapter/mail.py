@@ -4,16 +4,23 @@ from email.header import decode_header, Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from re import search
+from typing import TypedDict, Union
 
 from settings import (
     SMTP_FROM,
     IMAP_HOST,
 )
-from models.record import Record
-from mailadapter.utils import parse_phone
+from utils import parse_phone
 
 
-def parse_email_closed(body: str) -> Record or ValueError:
+class OrderClosedData(TypedDict):
+    user_id: str
+    phone: Union[str, None]
+    full_name: str
+    message: str
+
+
+def parse_email_closed(body: str) -> OrderClosedData or ValueError:
     try:
         result = search(
             ".*Табельный номер:(.*)\r*\n*.*ФИО:(.*)\r*\n*.*Номер телефона:(.*)\r*\n*",
@@ -31,16 +38,21 @@ def parse_email_closed(body: str) -> Record or ValueError:
             .replace("Наряд", "\nНаряд")
             .replace("Решение", "\nРешение")
         )
-        record = Record(user_id=user_id, phone=phone, full_name=fio, message=msg)
-        logging.debug(f"PARSING Raw: {body} Result: {record}")
-        return record
+        data = OrderClosedData(user_id=user_id, phone=phone, full_name=fio, message=msg)
+        logging.debug(f"PARSING Raw: {body} Result: {data}")
+        return data
     except Exception as e:
         logging.exception(f"PARSING Raw: {body}")
         raise ValueError from e
 
 
+class OrderCreatedData(TypedDict):
+    user_id: str
+    full_name: str
+
+
 # Предоставить набор стандартных доступов Веденеев Дмитрий Витальевич, Дикси МО-Запад, ДЮ-276910, Региональный менеджер
-def parse_email_created(body: str) -> Record or ValueError:
+def parse_email_created(body: str) -> OrderCreatedData or ValueError:
     try:
         result = search(
             "Предоставить набор стандартных доступов(.*),(.*),(.*),(.*)", body
@@ -48,9 +60,9 @@ def parse_email_created(body: str) -> Record or ValueError:
         user_id = result.group(3).strip()
         fio = result.group(1).strip()
 
-        record = Record(user_id=user_id, full_name=fio)
-        logging.debug(f"PARSING - Raw: {body} Result: {record}")
-        return record
+        data = OrderCreatedData(user_id=user_id, full_name=fio)
+        logging.debug(f"PARSING - Raw: {body} Result: {data}")
+        return data
     except Exception as e:
         logging.exception(f"PARSING - Raw: {body}")
         raise ValueError from e
@@ -90,6 +102,10 @@ def send_mail(toaddrs, subject, text):
         server = smtplib.SMTP(IMAP_HOST)
         server.sendmail(fromaddr, toaddrs, msg.as_string())
         server.quit()
-        logging.debug(f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}")
+        logging.debug(
+            f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}"
+        )
     except Exception as e:
-        logging.exception(f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}")
+        logging.exception(
+            f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}"
+        )

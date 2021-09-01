@@ -1,10 +1,22 @@
 import asyncio
 import imaplib
+import logging
 from datetime import timedelta
 from email.parser import BytesParser
 
 from mailadapter import *
+from mailadapter.chat_bot import send_to_user
+from mailadapter.mail import (
+    decode_email_header,
+    get_email_body,
+    parse_email_closed,
+    parse_email_created,
+    OrderClosedData,
+    OrderCreatedData,
+)
+from models import Database
 from models.record import Record, States
+from settings import BASE_DIR, DELAY, IMAP_HOST, IMAP_PASSWD, IMAP_USER, IMAP_PORT
 
 email_guide = """
 ОТКРЫТИЕ ПОЧТЫ НЕ ИЗ СЕТИ ДИКСИ:
@@ -36,27 +48,28 @@ async def read_messages(imap):
         if subject == "Заведен новый РГМ/ТР":
             body = get_email_body(msg)
             try:
-                record: Record = parse_email_closed(body)
-                await handle_order_closed(record)
+                order_data: OrderClosedData = parse_email_closed(body)
+                await handle_order_closed(order_data)
             except ValueError:
                 pass
 
         elif "Зарегистрировано Обр." in subject:
             body = get_email_body(msg)
             try:
-                record: Record = parse_email_created(body)
-                await handle_order_create(record)
+                order_data: OrderCreatedData = parse_email_created(body)
+                await handle_order_create(order_data)
             except ValueError:
                 pass
     imap.expunge()
 
 
-async def handle_order_closed(record: Record):
-    row = await queries.get(user_id=record.user_id)
-    if row:
-        row = Record(**row)
-        row.update(record)
-        record = row
+async def handle_order_closed(data: OrderClosedData):
+    record: Record = await Record.query_set.get(user_id=data["user_id"])
+    if record:
+        if data["phone"]:
+            record.user.phone = data["phone"]
+        record.user.full_name = data["full_name"]
+        record.message = data["message"]
 
     state = record.state
 
@@ -64,22 +77,24 @@ async def handle_order_closed(record: Record):
         return
 
     if state == States.NONE:
-        record.update_tg_id()
+        record.user.update_tg_id()
 
     if state == States.AUTH and record.message:
-        is_success = send_to_user(user_id=record.user_tg_id, message=record.message)
-        send_to_user(user_id=record.user_tg_id, message=email_guide)
-        send_to_user(user_id=record.user_tg_id, message="", image=SKY_DIXY_PATH)
-        send_to_user(user_id=record.user_tg_id, message=vpn_guide)
+        is_success = send_to_user(
+            user_id=record.user.user_tg_id, message=record.message
+        )
+        send_to_user(user_id=record.user.user_tg_id, message=email_guide)
+        send_to_user(user_id=record.user.user_tg_id, message="", image=SKY_DIXY_PATH)
+        send_to_user(user_id=record.user.user_tg_id, message=vpn_guide)
         if is_success:
-            row = await queries.msg_send(record=record)
+            row = await queries.msg_send(record=data)
             try:
                 send_to_itil(Record(**row))
             except Exception:
-                logging.exception(f"SEND TO ITIL - Record: {record}")
+                logging.exception(f"SEND TO ITIL - Record: {data}")
             return
 
-    await update(record)
+    await update(data)
 
 
 def send_to_itil(record: Record):
@@ -102,24 +117,24 @@ def send_to_itil(record: Record):
     send_mail(ITIL_EMAIL, subject=subject, text=text)
 
 
-async def handle_order_create(record: Record):
-    row = await queries.get(user_id=record.user_id)
+async def handle_order_create(data: OrderCreatedData):
+    row = await queries.get(user_id=data.user_id)
     if row:
         row = Record(**row)
-        row.update(record)
-        record = row
+        row.update(data)
+        data = row
 
-    state = record.state
+    state = data.state
 
     if state == States.NONE:
-        record.update_tg_id()
-        if record.user_tg_id:
+        data.update_tg_id()
+        if data.user_tg_id:
             try:
-                send_to_itil(record)
+                send_to_itil(data)
             except Exception:
-                logging.exception(f"SEND TO ITIL - Record: {record}")
+                logging.exception(f"SEND TO ITIL - Record: {data}")
 
-    await update(record)
+    await update(data)
 
 
 async def connect():
