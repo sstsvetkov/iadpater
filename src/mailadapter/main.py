@@ -4,7 +4,7 @@ from datetime import timedelta
 from email.parser import BytesParser
 
 from mailadapter import *
-from mailadapter.user_info import Record, States
+from models.record import Record, States
 
 email_guide = """
 ОТКРЫТИЕ ПОЧТЫ НЕ ИЗ СЕТИ ДИКСИ:

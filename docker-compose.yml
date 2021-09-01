@@ -11,7 +11,7 @@ services:
       - 127.0.0.1:4444:4444
     depends_on:
       - db
-    command: python ./src/web.py
+    command: python ./src/main.py
     volumes:
       - ./data/:/data/
   db:
@@ -28,7 +28,7 @@ services:
     container_name: iadapter_email_adapter
     env_file:
       - .env
-    command: python ./src/mail_adapter.py
+    command: python ./src/main.py
 
 networks:
   default:

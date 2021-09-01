@@ -5,11 +5,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from re import search
 
-from mailadapter.settings import (
+from settings import (
     SMTP_FROM,
     IMAP_HOST,
 )
-from mailadapter.user_info import Record
+from models.record import Record
 from mailadapter.utils import parse_phone
 
 

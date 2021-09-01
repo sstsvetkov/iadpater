@@ -3,8 +3,8 @@ import os
 
 import asyncpg
 
-from mail_adapter import send_to_itil
-from mailadapter.user_info import Record
+from mailadapter.main import send_to_itil
+from models.record import Record
 from mailadapter.queries import get_all
 
 

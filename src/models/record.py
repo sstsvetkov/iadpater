@@ -1,48 +1,57 @@
-from models.model import Model
+from datetime import datetime
+from enum import Enum
+from typing import Optional
 
-"""
-row_id SERIAL NOT NULL PRIMARY KEY,
-user_id varchar(64),
-user_tg_id varchar(64),
-message varchar(2048),
-phone   varchar(16),
-full_name varchar(128),
-creation_date timestamp not null default current_timestamp
-"""
+from mailadapter.chat_bot import get_tg_id
+from models.user import User
 
 
-class Record(Model):
-    fields = [
-        "user_id",
-        "user_tg_id",
-        "message",
-        "phone",
-        "full_name",
-        "creation_date",
-    ]
-    pk = ["row_id"]
+class States(Enum):
+    NONE = 0
+    AUTH = 1
+    MSG_SEND = 2
 
-    uniques = [
-        "user_id"
-    ]
 
-    table_name = "Records"
+class Record:
+    user: User
+    send_date: Optional[datetime]
+    message: Optional[str]
 
     def __init__(
         self,
-        row_id=None,
-        user_id=None,
+        user_id,
+        full_name,
         user_tg_id=None,
-        message=None,
         phone=None,
-        full_name=None,
-        creation_date=None,
+        send_date=None,
+        message=None,
+        *args,
+        **kwargs
     ):
-        super(Record, self).__init__()
-        self.row_id = row_id
         self.user_id = user_id
-        self.user_tg_id = user_tg_id
-        self.message = message
-        self.phone = phone
         self.full_name = full_name
-        self.creation_date = creation_date
+        self.user_tg_id = user_tg_id
+        self.phone = phone
+        self.send_date = send_date
+        self.message = message
+
+    def update(self, record: "Record"):
+        self.phone = record.phone or self.phone
+        self.message = record.message or self.message
+
+    def update_tg_id(self):
+        tg_info = get_tg_id(user_id=self.user_id, phone=self.phone)
+        if tg_info:
+            self.user_tg_id = self.user_tg_id or tg_info[0]
+            self.phone = self.phone or tg_info[1]
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    @property
+    def state(self) -> States:
+        if self.send_date and self.user_tg_id:
+            return States.MSG_SEND
+        elif self.user_tg_id:
+            return States.AUTH
+        return States.NONE

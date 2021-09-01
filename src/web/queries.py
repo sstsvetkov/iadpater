@@ -21,7 +21,7 @@ async def add_phone(user_id: str, phone: str):
     )
 
 
-async def get(phone: str):
+async def get_user_by_phone(phone: str):
     db = await Database.get_connection()
     return await db.fetchrow(
         """

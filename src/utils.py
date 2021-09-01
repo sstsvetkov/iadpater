@@ -1,8 +1,8 @@
-from re import findall
+import re
 
 
 def parse_phone(phone: str) -> int:
-    phone = "".join(findall(r"\d+", phone))
+    phone = "".join(re.findall(r"\d+", phone))
     if len(phone) < 10:
         raise ValueError
     try:

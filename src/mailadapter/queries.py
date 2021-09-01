@@ -1,4 +1,4 @@
-from mailadapter.user_info import Record
+from models.record import Record
 from models.db import Database
 
 """

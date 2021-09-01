@@ -4,7 +4,7 @@ from typing import Tuple
 import requests
 
 from mailadapter.utils import parse_phone
-from mailadapter.settings import AUTOFAQ_SERVICE_HOST, DEBUG
+from settings import AUTOFAQ_SERVICE_HOST, DEBUG
 
 
 def send_to_user(user_id, message, image=None):
@@ -59,6 +59,6 @@ def get_tg_id(phone=None, user_id=None) -> Tuple[str, str] or None:
         json=data,
     )
     response_json = response.json()
-    if response_json and response_json[0] and response_json[0].get("phone", None) and response_json[0].get("id", None):
+    if response_json and response_json[0] and response_json[0].get_user_by_phone("phone", None) and response_json[0].get_user_by_phone("id", None):
         return response_json[0]["id"], str(parse_phone(response_json[0]["phone"]))
     return None

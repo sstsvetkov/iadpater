@@ -13,7 +13,7 @@ services:
       - 127.0.0.1:4444:4444
     depends_on:
       - db
-    command: python ./src/web.py
+    command: python ./src/main.py
 #    command: tail -F anything
     volumes:
       - ./data/:/data/
@@ -37,4 +37,4 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: python ./src/mail_adapter.py
+    command: python ./src/main.py

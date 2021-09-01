@@ -13,8 +13,20 @@ SMTP_FROM = environ.get("SMTP_FROM")
 DELAY = int(environ.get("DELAY", 60))
 AUTOFAQ_SERVICE_HOST = environ.get("AUTOFAQ_SERVICE_HOST")
 ITIL_EMAIL = environ.get("ITIL_EMAIL")
+AD = environ.get("AD")
+
+# ITILIUM
+ITIL_API_URL = environ.get("ITIL_API_URL")
+ITIL_PASS = environ.get("ITIL_PASS")
+ITIL_LOGIN = environ.get("ITIL_LOGIN")
 
 if DEBUG:
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 else:
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )

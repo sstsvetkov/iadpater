@@ -2,28 +2,21 @@ create table users
 (
     row_id SERIAL NOT NULL PRIMARY KEY,
     user_id varchar(64) NOT NULL UNIQUE,
-    email     varchar(128) NOT NULL,
-    full_name varchar(128) NOT NULL,
+    email     varchar(128),
+    full_name varchar(128),
     position  varchar(64),
     phone   varchar(16),
-	last_auth timestamp not null default current_timestamp
-);
-
-create table phones
-(
-    row_id SERIAL NOT NULL PRIMARY KEY,
-    user_id varchar(64) NOT NULL UNIQUE,
-    phone   varchar(16) NOT NULL,
-    creation_date timestamp not null default current_timestamp
+    extra_phone   varchar(16),
+    user_tg_id varchar(64),
+	last_auth timestamp
 );
 
 create table records
 (
     row_id SERIAL NOT NULL PRIMARY KEY,
-    user_id varchar(64) UNIQUE NOT NULL,
-    user_tg_id varchar(64),
+    user_fk int,
     message varchar(2048),
-    phone   varchar(16),
     full_name varchar(128),
-    send_date timestamp
-)
+    send_date timestamp,
+    FOREIGN KEY (user_fk) REFERENCES users (row_id)
+);
