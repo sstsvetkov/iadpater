@@ -1,10 +1,9 @@
 import asyncio
 import imaplib
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 from email.parser import BytesParser
 
-from mailadapter import *
 from mailadapter.chat_bot import send_to_user
 from mailadapter.mail import (
     decode_email_header,
@@ -13,10 +12,20 @@ from mailadapter.mail import (
     parse_email_created,
     OrderClosedData,
     OrderCreatedData,
+    send_mail,
 )
 from models import Database
 from models.record import Record, States
-from settings import BASE_DIR, DELAY, IMAP_HOST, IMAP_PASSWD, IMAP_USER, IMAP_PORT
+from models.user import User
+from settings import (
+    BASE_DIR,
+    DELAY,
+    IMAP_HOST,
+    IMAP_PASSWD,
+    IMAP_USER,
+    IMAP_PORT,
+    ITIL_EMAIL,
+)
 
 email_guide = """
 ОТКРЫТИЕ ПОЧТЫ НЕ ИЗ СЕТИ ДИКСИ:
@@ -63,6 +72,14 @@ async def read_messages(imap):
     imap.expunge()
 
 
+def send_info_to_user(record: Record):
+    is_success = send_to_user(user_id=record.user.user_tg_id, message=record.message)
+    send_to_user(user_id=record.user.user_tg_id, message=email_guide)
+    send_to_user(user_id=record.user.user_tg_id, message="", image=SKY_DIXY_PATH)
+    send_to_user(user_id=record.user.user_tg_id, message=vpn_guide)
+    return is_success
+
+
 async def handle_order_closed(data: OrderClosedData):
     record: Record = await Record.query_set.get(user_id=data["user_id"])
     if record:
@@ -70,6 +87,8 @@ async def handle_order_closed(data: OrderClosedData):
             record.user.phone = data["phone"]
         record.user.full_name = data["full_name"]
         record.message = data["message"]
+    else:
+        record = Record(user=User(**data), message=data["message"])
 
     state = record.state
 
@@ -80,61 +99,48 @@ async def handle_order_closed(data: OrderClosedData):
         record.user.update_tg_id()
 
     if state == States.AUTH and record.message:
-        is_success = send_to_user(
-            user_id=record.user.user_tg_id, message=record.message
-        )
-        send_to_user(user_id=record.user.user_tg_id, message=email_guide)
-        send_to_user(user_id=record.user.user_tg_id, message="", image=SKY_DIXY_PATH)
-        send_to_user(user_id=record.user.user_tg_id, message=vpn_guide)
-        if is_success:
-            row = await queries.msg_send(record=data)
-            try:
-                send_to_itil(Record(**row))
-            except Exception:
-                logging.exception(f"SEND TO ITIL - Record: {data}")
-            return
+        if send_info_to_user(record=record):
+            record.send_date = datetime.now()
+            if send_to_itil(record):
+                record.itil_send_date = datetime.now()
 
-    await update(data)
+    await record.save()
 
 
-def send_to_itil(record: Record):
+def send_to_itil(record: Record) -> bool:
     state = record.state
     if state == States.MSG_SEND:
         subject = "Событие: чат бот отравил сообщение пользователю"
     elif state == States.AUTH:
         subject = "Событие: пользователь авторизовался в чат боте"
     else:
-        return
+        return False
 
     text = (
-        f"#Табельный номер={record.user_id}#\t\n"
-        f"#Номер телефона=7{record.phone}#\t\n"
-        f"#Авторизация пользователя в боте (поделиться номером)={str(bool(record.user_tg_id)).lower()}#\t\n"
+        f"#Табельный номер={record.user.user_id}#\t\n"
+        f"#Номер телефона=7{record.user.phone}#\t\n"
+        f"#Авторизация пользователя в боте (поделиться номером)={str(bool(record.user.user_tg_id)).lower()}#\t\n"
         f"#Отправлено сообщение={str(bool(record.send_date)).lower()}#\t\n"
         f"#Дата отправки={(record.send_date + timedelta(hours=3)).strftime('%d.%m.%Y %H:%M:%S') if record.send_date else 'null'}#"
     )
 
-    send_mail(ITIL_EMAIL, subject=subject, text=text)
+    return send_mail(ITIL_EMAIL, subject=subject, text=text)
 
 
 async def handle_order_create(data: OrderCreatedData):
-    row = await queries.get(user_id=data.user_id)
-    if row:
-        row = Record(**row)
-        row.update(data)
-        data = row
+    record: Record = await Record.get(user_id=data["user_id"])
+    if record:
+        record.user.full_name = data["user_id"]
+    else:
+        record = Record(user=User(**data))
 
-    state = data.state
+    state = record.state
 
     if state == States.NONE:
-        data.update_tg_id()
-        if data.user_tg_id:
-            try:
-                send_to_itil(data)
-            except Exception:
-                logging.exception(f"SEND TO ITIL - Record: {data}")
-
-    await update(data)
+        if record.user.update_tg_id():
+            if send_to_itil(record=record):
+                record.itil_send_date = datetime.now()
+    await record.save()
 
 
 async def connect():

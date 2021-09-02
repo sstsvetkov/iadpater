@@ -90,7 +90,7 @@ def decode_email_header(header):
     return header_bytes.decode(encoding)
 
 
-def send_mail(toaddrs, subject, text):
+def send_mail(toaddrs, subject, text) -> bool:
     fromaddr = SMTP_FROM
     msg = MIMEMultipart()
     msg["Subject"] = Header(subject, "utf-8")
@@ -105,7 +105,9 @@ def send_mail(toaddrs, subject, text):
         logging.debug(
             f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}"
         )
+        return True
     except Exception as e:
         logging.exception(
             f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}"
         )
+        return False

@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
+from mailadapter.chat_bot import get_tg_id, TgInfo
 from models import Database
 from models.model import Model, QuerySet
 
@@ -38,7 +39,7 @@ class UserQuerySet(QuerySet):
     @staticmethod
     async def update(user):
         db = await Database.get_connection()
-        await db.execute(
+        return await db.fetchrow(
             """
             INSERT INTO users(user_id, email, full_name, position, phone, extra_phone, user_tg_id, last_auth)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -50,6 +51,7 @@ class UserQuerySet(QuerySet):
                 extra_phone = excluded.extra_phone or extra_phone,
                 user_tg_id = excluded.user_tg_id or user_tg_id,
                 last_auth = excluded.last_auth or last_auth
+            RETURNING *
             """,
             user.user_id,
             user.email,
@@ -99,3 +101,9 @@ class User(Model):
 
     async def get(self):
         return self.query_set.get(user_id=self.user_id)
+
+    def update_tg_id(self):
+        tg_info: TgInfo or None = get_tg_id(user_id=self.user_id, phone=self.phone)
+        if tg_info:
+            self.user_tg_id = self.user_tg_id or tg_info["id"]
+            self.phone = self.phone or tg_info["phone"]

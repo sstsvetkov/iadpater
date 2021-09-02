@@ -16,7 +16,7 @@ create table records
     row_id SERIAL NOT NULL PRIMARY KEY,
     user_fk int,
     message varchar(2048),
-    full_name varchar(128),
     send_date timestamp,
+    itil_send_date timestamp,
     FOREIGN KEY (user_fk) REFERENCES users (row_id)
 );

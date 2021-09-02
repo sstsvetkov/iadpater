@@ -14,6 +14,7 @@ DELAY = int(environ.get("DELAY", 60))
 AUTOFAQ_SERVICE_HOST = environ.get("AUTOFAQ_SERVICE_HOST")
 ITIL_EMAIL = environ.get("ITIL_EMAIL")
 AD = environ.get("AD")
+SECRET = environ.get("SECRET")
 
 # ITILIUM
 ITIL_API_URL = environ.get("ITIL_API_URL")

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from openpyxl import load_workbook
 
@@ -7,6 +8,39 @@ from utils import parse_phone
 from aiohttp import web
 
 from web.queries import add_phone, get_user_by_phone
+
+
+class UserView(web.View):
+    async def get(self):
+        phone = self.request.query.get("phone")
+        if phone:
+            service = await get_user(str(phone).strip())
+        else:
+            service = {"state": False}
+        return web.Response(
+            text=json.dumps(service, ensure_ascii=False), charset="utf-8"
+        )
+
+
+class AddPhoneView(web.View):
+    async def post(self):
+        text = await self.request.text()
+        try:
+            body = json.loads(text or "{}")
+        except json.JSONDecodeError:
+            return web.Response(status=400)
+        phone = body.get_user_by_phone("phone", None)
+        employee_id = body.get_user_by_phone("employeeId", None)
+        if (phone and employee_id) is not None:
+            try:
+                phone = parse_phone(str(phone).strip())
+                await add_phone(user_id=employee_id, phone=str(phone))
+            except ValueError:
+                web.Response(status=400)
+        else:
+            return web.Response(status=400)
+
+        return web.Response(status=200)
 
 
 def get_extra_user(phone):
@@ -139,38 +173,3 @@ async def get_user(phone):
         return {"state": False, "comment": "Не нашел номер телефона в таблице"}
 
     return matches[0]
-
-
-class UserView(web.View):
-    async def get(self):
-        phone = self.request.query.get("phone")
-        if phone:
-            service = await get_user(str(phone).strip())
-        else:
-            service = {"state": False}
-        return web.Response(
-            text=json.dumps(service, ensure_ascii=False), charset="utf-8"
-        )
-
-
-async def handle_add_user_phone(request):
-    if request.headers["Authorization"] == os.environ.get_user_by_phone("SECRET"):
-        text = await request.text()
-        try:
-            body = json.loads(text or "{}")
-        except json.JSONDecodeError:
-            return web.Response(status=400)
-        phone = body.get_user_by_phone("phone", None)
-        employee_id = body.get_user_by_phone("employeeId", None)
-        if (phone and employee_id) is not None:
-            try:
-                phone = parse_phone(str(phone).strip())
-                await add_phone(user_id=employee_id, phone=str(phone))
-            except ValueError:
-                web.Response(status=400)
-        else:
-            return web.Response(status=400)
-    else:
-        return web.Response(status=401)
-
-    return web.Response(status=200)

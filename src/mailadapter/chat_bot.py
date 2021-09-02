@@ -1,10 +1,10 @@
 import logging
-from typing import Tuple
+from typing import TypedDict
 
 import requests
 
-from mailadapter.utils import parse_phone
 from settings import AUTOFAQ_SERVICE_HOST, DEBUG
+from utils import parse_phone
 
 
 def send_to_user(user_id, message, image=None):
@@ -36,21 +36,28 @@ def send_to_user(user_id, message, image=None):
         return False
 
 
-def get_tg_id(phone=None, user_id=None) -> Tuple[str, str] or None:
-    params = {"serviceId": "373a98b7-6b91-4701-84e9-2276ea27f254"}
-    if phone:
-        s = {"field": {"payload": "userPhone"}, "ilike": f"%{phone}%"}
-    elif user_id:
-        s = {"field": {"payload": "user_num"}, "ilike": f"%{user_id}%"}
-    else:
+class TgInfo(TypedDict):
+    phone: str
+    id: str
+
+
+def get_tg_id(phone=None, user_id=None) -> TgInfo or None:
+    if not phone and not user_id:
         return None
+    params = {"serviceId": "373a98b7-6b91-4701-84e9-2276ea27f254"}
+    q = []
+    if phone:
+        q.append = {"field": {"payload": "userPhone"}, "ilike": f"%{phone}%"}
+    if user_id:
+        q.append = {"field": {"payload": "user_num"}, "ilike": f"%{user_id}%"}
+
     data = {
         "and": [
             {
                 "field": {"static": "ChannelId"},
                 "in": ["0d33b11c-20af-4781-a992-9e8aef0cc3b5"],
             },
-            s,
+            {"or": q},
         ]
     }
     response = requests.post(
@@ -59,6 +66,11 @@ def get_tg_id(phone=None, user_id=None) -> Tuple[str, str] or None:
         json=data,
     )
     response_json = response.json()
-    if response_json and response_json[0] and response_json[0].get_user_by_phone("phone", None) and response_json[0].get_user_by_phone("id", None):
+    if (
+        response_json
+        and response_json[0]
+        and response_json[0].get_user_by_phone("phone", None)
+        and response_json[0].get_user_by_phone("id", None)
+    ):
         return response_json[0]["id"], str(parse_phone(response_json[0]["phone"]))
     return None
