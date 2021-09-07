@@ -11,6 +11,7 @@ from ldap3 import Server, Connection, ALL, NTLM
 from openpyxl import load_workbook
 from requests_ntlm import HttpNtlmAuth
 
+from mailadapter import AUTOFAQ_SERVICE_HOST
 from models.db import Database
 from web.queries import get, add_phone
 from web.settings import *
@@ -405,7 +406,7 @@ async def handle_send_file_to_itil(request):
     file_id = body.get("file_id", None)
     uid = body.get("uid", None)
     if file_id and uid:
-        url = "http://srv-autofaq-dca/api/files/"
+        url = f"http://{AUTOFAQ_SERVICE_HOST}/api/files/"
         r = requests.get(url=url + file_id)
         d = r.headers['content-disposition']
         fname = unquote(re.findall("filename=\"(.+)\"", d)[0])
