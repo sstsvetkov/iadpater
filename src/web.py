@@ -3,6 +3,7 @@ import json
 import os
 import re
 from hashlib import sha256
+from urllib.parse import unquote
 
 import requests
 from aiohttp import web
@@ -395,6 +396,35 @@ async def handle_add_user_phone(request):
 
     return web.Response(status=200)
 
+async def handle_send_file_to_itil(request):
+    text = await request.text()
+    try:
+        body = json.loads(text or "{}")
+    except json.JSONDecodeError:
+        return web.Response(status=400)
+    file_id = body.get("file_id", None)
+    uid = body.get("uid", None)
+    if file_id and uid:
+        url = "http://srv-autofaq-dca/api/files/"
+        r = requests.get(url=url + file_id)
+        d = r.headers['content-disposition']
+        fname = unquote(re.findall("filename=\"(.+)\"", d)[0])
+        base64_image = base64.b64encode(r.content).decode("utf-8")
+        j = json.dumps({
+            "UID": uid,
+            "NameFile": fname,
+            "Data": base64_image
+        })
+        response = requests.post(
+            f"{os.environ.get('ITIL_API_URL')}addFileToIncident",
+            auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
+            data=j
+        )
+        if response.status_code == 200:
+            return web.Response(status=200)
+
+    return web.Response(status=400)
+
 
 async def init_app():
     app = web.Application()
@@ -409,6 +439,7 @@ async def init_app():
     app.add_routes([web.get("/itil-get-services", handle_get_services)])
     app.add_routes([web.get("/user", handle_get_user)])
     app.add_routes([web.post("/add-user-phone", handle_add_user_phone)])
+    app.add_routes([web.post("/send-file-to-itil", handle_send_file_to_itil)])
     return app
 
 
