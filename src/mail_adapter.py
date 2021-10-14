@@ -122,30 +122,33 @@ async def handle_order_create(record: Record):
     await update(record)
 
 
-async def connect():
-    for attempt in range(3):
-        try:
-            imap = imaplib.IMAP4_SSL(IMAP_HOST, port=IMAP_PORT)
-            imap.login(IMAP_USER, IMAP_PASSWD)
-            logging.info("Connecting to mail server")
-            return imap
-        except Exception as e:
-            if attempt == 2:
-                raise e
-            await asyncio.sleep(DELAY * 2)
+# async def connect():
+#     for attempt in range(3):
+#         try:
+#             imap = imaplib.IMAP4_SSL(IMAP_HOST, port=IMAP_PORT)
+#             imap.login(IMAP_USER, IMAP_PASSWD)
+#             logging.info("Connecting to mail server")
+#             return imap
+#         except Exception as e:
+#             if attempt == 2:
+#                 raise e
+#             await asyncio.sleep(DELAY * 2)
 
 
 async def main():
-    await Database.get_connection()
     while True:
-        imap = await connect()
-        while True:
-            try:
-                await read_messages(imap)
-                await asyncio.sleep(DELAY)
-            except Exception:
-                logging.exception(msg="Error")
-                break
+        try:
+            await Database.get_connection()
+            logging.info("DB connected successfully")
+            imap = imaplib.IMAP4_SSL(IMAP_HOST, port=IMAP_PORT)
+            imap.login(IMAP_USER, IMAP_PASSWD)
+            logging.info("Mail server connected successfully")
+            await read_messages(imap)
+            imap.logout()
+            imap.close()
+        except Exception:
+            logging.exception(msg="Error")
+        await asyncio.sleep(DELAY)
 
 
 if __name__ == "__main__":
