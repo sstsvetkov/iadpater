@@ -147,8 +147,8 @@ async def main():
                 await read_messages(imap)
             except Exception:
                 logging.exception(msg="Error")
-            imap.logout()
             imap.close()
+            imap.logout()
         except Exception:
             logging.exception(msg="Error")
         await asyncio.sleep(DELAY)

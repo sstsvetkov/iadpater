@@ -24,11 +24,13 @@ services:
     - ./init.sql:/docker-entrypoint-initdb.d/init.sql
   email_adapter:
     image: averniko/iadapter:latest
-#    restart: unless-stopped
+    restart: unless-stopped
     container_name: iadapter_email_adapter
     env_file:
       - .env
     command: python ./src/mail_adapter.py
+    depends_on:
+      - db
 
 networks:
   default:
