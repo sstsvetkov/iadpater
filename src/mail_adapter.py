@@ -143,7 +143,10 @@ async def main():
             imap = imaplib.IMAP4_SSL(IMAP_HOST, port=IMAP_PORT)
             imap.login(IMAP_USER, IMAP_PASSWD)
             logging.info("Mail server connected successfully")
-            await read_messages(imap)
+            try:
+                await read_messages(imap)
+            except Exception:
+                logging.exception(msg="Error")
             imap.logout()
             imap.close()
         except Exception:
