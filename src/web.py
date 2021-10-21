@@ -144,13 +144,17 @@ def get_user_info(username, password):
         conn.search(
             "dc=Dixy,dc=local",
             f"(&(objectclass=person)(sAMAccountName={username}))",
-            attributes=["title", "cn"],
+            attributes=["title", "cn", "employeeID"],
         )
     except:
         return None
     if conn.entries:
         user = conn.entries[0]
-        return {"full_name": str(user["cn"]), "position": str(user["title"])}
+        return {
+            "user_id": str(user["employeeID"]),
+            "full_name": str(user["cn"]),
+            "position": str(user["title"]),
+        }
     else:
         return None
 
@@ -173,13 +177,14 @@ async def handle_auth_post(request):
             conn = request.app["db"]
             await conn.execute(
                 """
-                INSERT INTO Users(phone, email, full_name, position)
+                INSERT INTO Users(user_id, email, full_name, position, phone)
                 VALUES($1, $2, $3, $4)
             """,
-                user["phone"],
+                user["user_id"],
                 user["email"],
                 user["full_name"],
                 user["position"],
+                user["phone"],
             )
         else:
             return web.Response(status=401)
@@ -397,6 +402,7 @@ async def handle_add_user_phone(request):
 
     return web.Response(status=200)
 
+
 async def handle_send_file_to_itil(request):
     text = await request.text()
     try:
@@ -408,18 +414,14 @@ async def handle_send_file_to_itil(request):
     if file_id and uid:
         url = f"http://{AUTOFAQ_SERVICE_HOST}/api/files/"
         r = requests.get(url=url + file_id)
-        d = r.headers['content-disposition']
-        fname = unquote(re.findall("filename=\"(.+)\"", d)[0])
+        d = r.headers["content-disposition"]
+        fname = unquote(re.findall('filename="(.+)"', d)[0])
         base64_image = base64.b64encode(r.content).decode("utf-8")
-        j = json.dumps({
-            "UID": uid,
-            "NameFile": fname,
-            "Data": base64_image
-        })
+        j = json.dumps({"UID": uid, "NameFile": fname, "Data": base64_image})
         response = requests.post(
             f"{os.environ.get('ITIL_API_URL')}addFileToIncident",
             auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
-            data=j
+            data=j,
         )
         if response.status_code == 200:
             return web.Response(status=200)
@@ -429,8 +431,8 @@ async def handle_send_file_to_itil(request):
 
 async def init_app():
     app = web.Application()
-    db = await Database.get_connection()
-    app["db"] = db
+    # db = await Database.get_connection()
+    # app["db"] = db
     app.add_routes([web.post("/laps", handle_laps)])
     app.add_routes([web.post("/bio", handle_bio)])
     app.add_routes([web.post("/basic-auth", handle_basic_auth)])
