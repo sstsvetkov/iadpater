@@ -20,7 +20,7 @@ class Database(object):
     async def get_connection(cls, new=False):
         if new or not cls._instance:
             cls._instance = await Database._create_connection()
-        return cls._instance.acquire()
+        return await cls._instance.acquire()
 
     def __exit__(self):
         self._instance.close()

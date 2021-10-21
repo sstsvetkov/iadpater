@@ -128,7 +128,7 @@ async def handle_auth_get(request):
         user_info["state"] = True
         user_info["full_name"] = user["full_name"]
         user_info["position"] = user["position"]
-    return web.Response(text=json.dumps(user_info), charset="utf-8")
+    return web.Response(text=json.dumps(user_info, ensure_ascii=False, indent=4), charset="utf-8")
 
 
 def get_user_info(username, password):
