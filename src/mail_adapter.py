@@ -58,15 +58,13 @@ async def handle_order_closed(record: Record):
         row.update(record)
         record = row
 
-    state = record.state
-
-    if state == States.MSG_SEND:
+    if record.state == States.MSG_SEND:
         return
 
-    if state == States.NONE:
+    if record.state == States.NONE:
         record.update_tg_id()
 
-    if state == States.AUTH and record.message:
+    if record.state == States.AUTH and record.message:
         is_success = send_to_user(user_id=record.user_tg_id, message=record.message)
         send_to_user(user_id=record.user_tg_id, message=email_guide)
         send_to_user(user_id=record.user_tg_id, message="", image=SKY_DIXY_PATH)
