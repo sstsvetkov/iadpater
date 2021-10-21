@@ -178,7 +178,7 @@ async def handle_auth_post(request):
             await conn.execute(
                 """
                 INSERT INTO Users(user_id, email, full_name, position, phone)
-                VALUES($1, $2, $3, $4)
+                VALUES($1, $2, $3, $4, $5)
             """,
                 user["user_id"],
                 user["email"],
