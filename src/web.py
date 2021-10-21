@@ -431,8 +431,8 @@ async def handle_send_file_to_itil(request):
 
 async def init_app():
     app = web.Application()
-    # db = await Database.get_connection()
-    # app["db"] = db
+    db = await Database.get_connection()
+    app["db"] = db
     app.add_routes([web.post("/laps", handle_laps)])
     app.add_routes([web.post("/bio", handle_bio)])
     app.add_routes([web.post("/basic-auth", handle_basic_auth)])
