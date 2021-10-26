@@ -403,35 +403,35 @@ async def handle_add_user_phone(request):
     return web.Response(status=200)
 
 
-async def handle_send_file_to_itil(request):
+async def handle_send_files_to_itil(request):
     text = await request.text()
     try:
         body = json.loads(text or "{}")
     except json.JSONDecodeError:
         return web.Response(status=400)
-    file_id = body.get("file_id", None)
+    files_ids = body.get("files_ids", None)
     uid = body.get("uid", None)
-    if file_id and uid:
-        url = f"http://{AUTOFAQ_SERVICE_HOST}/api/files/"
-        r = requests.get(url=url + file_id)
-        d = r.headers["content-disposition"]
-        fname = unquote(re.findall('filename="(.+)"', d)[0])
-        base64_image = base64.b64encode(r.content).decode("utf-8")
-        j = json.dumps({"UID": uid, "NameFile": fname, "Data": base64_image})
-        response = requests.post(
-            f"{os.environ.get('ITIL_API_URL')}addFileToIncident",
-            auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
-            data=j,
-        )
-        if response.status_code == 200:
-            return web.Response(status=200)
+    if files_ids and uid:
+        for file_id in files_ids:
+            url = f"http://{AUTOFAQ_SERVICE_HOST}/api/files/"
+            r = requests.get(url=url + file_id)
+            d = r.headers["content-disposition"]
+            file_name = unquote(re.findall('filename="(.+)"', d)[0])
+            base64_image = base64.b64encode(r.content).decode("utf-8")
+            j = json.dumps({"UID": uid, "NameFile": file_name, "Data": base64_image})
+            response = requests.post(
+                f"{os.environ.get('ITIL_API_URL')}addFileToIncident",
+                auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
+                data=j,
+            )
+        return web.Response(status=200)
 
     return web.Response(status=400)
 
 
 async def init_app():
     app = web.Application()
-    db = await Database.get_connection()
+    db = await Database.get_connection_pool()
     app["db"] = db
     app.add_routes([web.post("/laps", handle_laps)])
     app.add_routes([web.post("/bio", handle_bio)])
@@ -442,7 +442,7 @@ async def init_app():
     app.add_routes([web.get("/itil-get-services", handle_get_services)])
     app.add_routes([web.get("/user", handle_get_user)])
     app.add_routes([web.post("/add-user-phone", handle_add_user_phone)])
-    app.add_routes([web.post("/send-file-to-itil", handle_send_file_to_itil)])
+    app.add_routes([web.post("/send-file-to-itil", handle_send_files_to_itil)])
     return app
 
 

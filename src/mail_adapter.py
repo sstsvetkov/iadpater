@@ -136,7 +136,7 @@ async def handle_order_create(record: Record):
 async def main():
     while True:
         try:
-            await Database.get_connection()
+            await Database.get_connection_pool()
             logging.info("DB connected successfully")
             imap = imaplib.IMAP4_SSL(IMAP_HOST, port=IMAP_PORT)
             imap.login(IMAP_USER, IMAP_PASSWD)

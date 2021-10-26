@@ -39,7 +39,7 @@ class Model(ABC):
         return self
 
     async def __create(self):
-        db = await Database.get_connection()
+        db = await Database.get_connection_pool()
         fields = ", ".join(self.fields)
         ids = ", ".join([f"${i}" for i in range(1, len(self.fields) + 1)])
         values = self.__get_fields(self.fields)
@@ -90,7 +90,7 @@ class Model(ABC):
         query_string_args = " AND ".join(query_string_args)
         query_string = query_string + " WHERE " + query_string_args
 
-        db = await Database.get_connection()
+        db = await Database.get_connection_pool()
         if many:
             return await db.fetchrows(query_string, *kwargs)
         else:

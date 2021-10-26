@@ -17,7 +17,7 @@ class Phone(Model):
         return phone
 
     async def save(self):
-        db = await Database.get_connection()
+        db = await Database.get_connection_pool()
         phone = await self.get(user_id=self.user_id)
         if phone:
             await db.execute(
