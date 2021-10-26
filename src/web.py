@@ -412,7 +412,7 @@ async def handle_send_files_to_itil(request):
     files_ids = body.get("files_ids", None)
     uid = body.get("uid", None)
     if files_ids and uid:
-        for file_id in files_ids:
+        for file_id in files_ids.split(","):
             url = f"http://{AUTOFAQ_SERVICE_HOST}/api/files/"
             r = requests.get(url=url + file_id)
             d = r.headers["content-disposition"]
