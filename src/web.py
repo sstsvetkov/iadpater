@@ -5,6 +5,7 @@ import re
 from hashlib import sha256
 from urllib.parse import unquote
 
+import chardet
 import requests
 from aiohttp import web
 from ldap3 import Server, Connection, ALL, NTLM
@@ -202,7 +203,7 @@ async def handle_get_incidents(request):
             f"{os.environ.get('ITIL_API_URL')}getListIncidents/?UserInitiator={user_initiator}",
             auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
         )
-        return web.Response(text=response.text, charset="utf-8")
+        return web.Response(text=response.content.decode("utf-8"), charset="utf-8")
     else:
         return web.Response(status=401)
 
