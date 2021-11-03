@@ -3,7 +3,6 @@
 # user_id varchar(64) NOT NULL UNIQUE,
 # phone   varchar(16) NOT NULL,
 # creation_date timestamp not null default current_timestamp
-from typing import List
 
 from models import Database
 from web.incident import Incident

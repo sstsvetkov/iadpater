@@ -1,25 +1,23 @@
+import asyncio
 import base64
 import json
 import os
 import re
-import sys
 from concurrent.futures.thread import ThreadPoolExecutor
 from hashlib import sha256
 from urllib.parse import unquote
 
-import asyncio
-import chardet
 import requests
 from aiohttp import web
 from ldap3 import Server, Connection, ALL, NTLM
 from openpyxl import load_workbook
 from requests_ntlm import HttpNtlmAuth
 
-from mailadapter import AUTOFAQ_SERVICE_HOST, send_to_user
-from models.db import Database
+from mailadapter import send_to_user
+from settings import *
 from web import Incident
 from web.queries import get, add_phone, update_incident, get_incident
-from web.settings import *
+from tg_bot import main as chat_bot
 
 
 def laps(server, user, password, computer_name):
@@ -520,7 +518,9 @@ async def init_app():
     app.add_routes([web.post("/itil-create-incident", handle_create_incident)])
 
     loop = asyncio.get_event_loop()
+    thread_pool = ThreadPoolExecutor(2)
     app["itil_feedback_thread"] = loop.create_task(itil_feedback())
+    app["bot_thread"] = loop.run_in_executor(thread_pool, chat_bot)
     return app
 
 

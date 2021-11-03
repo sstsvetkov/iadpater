@@ -35,3 +35,10 @@ create table incidents
     user_tg_id varchar(64) NOT NULL,
     status varchar(64) NOT NULL
 );
+
+create table receivers
+(
+    row_id SERIAL NOT NULL PRIMARY KEY,
+    tg_dialog_id varchar(64) UNIQUE NOT NULL,
+    send_notifications bool NOT NULL
+);
