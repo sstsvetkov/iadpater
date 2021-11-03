@@ -64,5 +64,9 @@ async def process_callback(callback_query: types.CallbackQuery):
         )
 
 
-if __name__ == "__main__":
+def main():
     executor.start_polling(dp, skip_updates=True)
+
+
+if __name__ == "__main__":
+    main()

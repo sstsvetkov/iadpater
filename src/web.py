@@ -17,7 +17,7 @@ from mailadapter import send_to_user
 from settings import *
 from web import Incident
 from web.queries import get, add_phone, update_incident, get_incident
-from tg_bot import main as chat_bot
+from tg_bot.tg_bot import main as chat_bot
 
 
 def laps(server, user, password, computer_name):

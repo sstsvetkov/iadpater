@@ -5,6 +5,7 @@ from email.parser import BytesParser
 
 from mailadapter import *
 from mailadapter.user_info import Record, States
+from settings import *
 
 email_guide = """
 ОТКРЫТИЕ ПОЧТЫ НЕ ИЗ СЕТИ ДИКСИ:
