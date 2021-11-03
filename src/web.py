@@ -498,7 +498,7 @@ async def itil_feedback():
                                     )
                                 )
         except:
-            logging.exception()
+            logging.exception(f"ERROR itil feedback")
 
         await asyncio.sleep(300)
 
