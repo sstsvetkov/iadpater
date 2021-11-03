@@ -26,4 +26,12 @@ create table records
     phone   varchar(16),
     full_name varchar(128),
     send_date timestamp
-)
+);
+
+create table incidents
+(
+    row_id SERIAL NOT NULL PRIMARY KEY,
+    incident_uid varchar(64) NOT NULL UNIQUE,
+    user_tg_id varchar(64) NOT NULL,
+    status varchar(64) NOT NULL
+);

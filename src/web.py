@@ -2,9 +2,12 @@ import base64
 import json
 import os
 import re
+import sys
+from concurrent.futures.thread import ThreadPoolExecutor
 from hashlib import sha256
 from urllib.parse import unquote
 
+import asyncio
 import chardet
 import requests
 from aiohttp import web
@@ -12,9 +15,10 @@ from ldap3 import Server, Connection, ALL, NTLM
 from openpyxl import load_workbook
 from requests_ntlm import HttpNtlmAuth
 
-from mailadapter import AUTOFAQ_SERVICE_HOST
+from mailadapter import AUTOFAQ_SERVICE_HOST, send_to_user
 from models.db import Database
-from web.queries import get, add_phone
+from web import Incident
+from web.queries import get, add_phone, update_incident, get_incident
 from web.settings import *
 
 
@@ -129,7 +133,9 @@ async def handle_auth_get(request):
         user_info["state"] = True
         user_info["full_name"] = user["full_name"]
         user_info["position"] = user["position"]
-    return web.Response(text=json.dumps(user_info, ensure_ascii=False, indent=4), charset="utf-8")
+    return web.Response(
+        text=json.dumps(user_info, ensure_ascii=False, indent=4), charset="utf-8"
+    )
 
 
 def get_user_info(username, password):
@@ -430,10 +436,77 @@ async def handle_send_files_to_itil(request):
     return web.Response(status=400)
 
 
+async def handle_create_incident(request):
+    text = await request.text()
+    try:
+        body = json.loads(text or "{}")
+    except json.JSONDecodeError:
+        return web.Response(status=400)
+    user_id = body.get("UserID", None)
+    if user_id:
+        data = json.dumps(body)
+        response = requests.post(
+            f"{os.environ.get('ITIL_API_URL')}addNewIncident",
+            auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
+            data=data,
+        )
+        if response.status_code == 200:
+            response_json = response.json()
+            uid = response_json.get("UID")
+            await update_incident(
+                Incident(
+                    incident_uid=uid, user_tg_id=user_id, status="Зарегистрировано"
+                )
+            )
+            return web.Response(status=200, text=response.text)
+
+    return web.Response(status=400)
+
+
+async def itil_feedback():
+    while True:
+        try:
+            response = requests.get(
+                f"{os.environ.get('ITIL_API_URL')}getListIncidents",
+                auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
+            )
+            if response.status_code == 200:
+                response_json = response.json()
+                for incident in response_json:
+                    status = incident.get("Status", {}).get("Name", None)
+                    uid = incident.get("UID", None)
+                    if status and uid:
+                        res = await get_incident(incident_uid=uid)
+                        if res:
+                            if res["status"] != status:
+                                if status == "На уточнении":
+                                    send_to_user(
+                                        message=f"Обращение {incident['Number']}: {status}",
+                                        user_id=res["user_tg_id"],
+                                    )
+
+                                if status == "Выполнено. Требует подтверждения":
+                                    send_to_user(
+                                        message=f"Обращение {incident['Number']}: {status}",
+                                        user_id=res["user_tg_id"],
+                                    )
+                                await update_incident(
+                                    Incident(
+                                        user_tg_id=res["user_tg_id"],
+                                        incident_uid=uid,
+                                        status=status,
+                                    )
+                                )
+        except:
+            logging.exception()
+
+        await asyncio.sleep(300)
+
+
 async def init_app():
     app = web.Application()
-    db = await Database.get_connection_pool()
-    app["db"] = db
+    # db = await Database.get_connection_pool()
+    # app["db"] = db
     app.add_routes([web.post("/laps", handle_laps)])
     app.add_routes([web.post("/bio", handle_bio)])
     app.add_routes([web.post("/basic-auth", handle_basic_auth)])
@@ -444,6 +517,10 @@ async def init_app():
     app.add_routes([web.get("/user", handle_get_user)])
     app.add_routes([web.post("/add-user-phone", handle_add_user_phone)])
     app.add_routes([web.post("/send-file-to-itil", handle_send_files_to_itil)])
+    app.add_routes([web.post("/itil-create-incident", handle_create_incident)])
+
+    loop = asyncio.get_event_loop()
+    app["itil_feedback_thread"] = loop.create_task(itil_feedback())
     return app
 
 
