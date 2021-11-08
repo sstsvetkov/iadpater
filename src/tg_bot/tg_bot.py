@@ -4,22 +4,19 @@ This bot is created for the demonstration of a usage of regular keyboards.
 
 import logging
 
+import asyncio
 from aiogram import Bot, Dispatcher, executor, types
 
 # Configure logging
 from settings import TG_NOTIFICATIONS_TOKEN
 from tg_bot.queries import get_receiver, update_receiver
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
 # Initialize bot and dispatcher
 bot = Bot(token=TG_NOTIFICATIONS_TOKEN)
 dp = Dispatcher(bot)
 
 
-@dp.message_handler(commands="start")
+@dp.message_handler(commands=["start", "help"])
 async def start_cmd_handler(message: types.Message):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     keyboard_markup.row(
@@ -42,30 +39,38 @@ async def process_callback(callback_query: types.CallbackQuery):
         types.InlineKeyboardButton(text="Включить уведомления", callback_data="1"),
         types.InlineKeyboardButton(text="Выключить уведомления", callback_data="2"),
     )
+    receiver = await get_receiver(tg_dialog_id=callback_query.message.chat.id)
     if data == "1":
         await update_receiver(
             tg_dialog_id=callback_query.message.chat.id, send_notifications=True
         )
-        await bot.edit_message_text(
-            chat_id=callback_query.message.chat.id,
-            message_id=callback_query.message.message_id,
-            text="Уведомления включены",
-            reply_markup=keyboard_markup,
-        )
+        if receiver and receiver["send_notifications"] is False:
+            await bot.edit_message_text(
+                chat_id=callback_query.message.chat.id,
+                message_id=callback_query.message.message_id,
+                text="Уведомления включены",
+                reply_markup=keyboard_markup,
+            )
     if data == "2":
         await update_receiver(
             tg_dialog_id=callback_query.message.chat.id, send_notifications=False
         )
-        await bot.edit_message_text(
-            chat_id=callback_query.message.chat.id,
-            message_id=callback_query.message.message_id,
-            text="Уведомления выключены",
-            reply_markup=keyboard_markup,
-        )
+        if receiver and receiver["send_notifications"] is True:
+            await bot.edit_message_text(
+                chat_id=callback_query.message.chat.id,
+                message_id=callback_query.message.message_id,
+                text="Уведомления выключены",
+                reply_markup=keyboard_markup,
+            )
 
 
 def main():
-    executor.start_polling(dp, skip_updates=True)
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        executor.start_polling(dp, skip_updates=True)
+    except Exception:
+        logging.exception("Error")
 
 
 if __name__ == "__main__":

@@ -528,7 +528,7 @@ async def init_app():
     app.add_routes([web.post("/itil-create-incident", handle_create_incident)])
 
     loop = asyncio.get_event_loop()
-    thread_pool = ThreadPoolExecutor(2)
+    thread_pool = ThreadPoolExecutor(3)
     app["itil_feedback_thread"] = loop.create_task(itil_feedback())
     app["bot_thread"] = loop.run_in_executor(thread_pool, chat_bot)
     return app
