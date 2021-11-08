@@ -200,6 +200,7 @@ async def handle_auth_post(request):
 
 async def handle_get_incidents(request):
     user_initiator = request.rel_url.query.get("userInitiator", None)
+    done = request.rel_url.query.get("done", None)
     if sha256(
         request.headers["Authorization"].encode("utf-8")
     ).hexdigest() == os.environ.get("SECRET_SHA256"):
@@ -207,7 +208,16 @@ async def handle_get_incidents(request):
             f"{os.environ.get('ITIL_API_URL')}getListIncidents/?UserInitiator={user_initiator}",
             auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
         )
-        return web.Response(text=response.content.decode("utf-8"), charset="utf-8")
+        response_text = response.content.decode("utf-8")
+        if done:
+            incidents = json.loads(response_text)
+            incidents = [
+                incident
+                for incident in incidents
+                if incident["Status"]["Name"] == "Выполнено. Требует подтверждения"
+            ]
+            response_text = json.dumps(incidents, ensure_ascii=False, indent=4)
+        return web.Response(text=response_text, charset="utf-8")
     else:
         return web.Response(status=401)
 
@@ -520,7 +530,7 @@ async def init_app():
     loop = asyncio.get_event_loop()
     thread_pool = ThreadPoolExecutor(2)
     app["itil_feedback_thread"] = loop.create_task(itil_feedback())
-    app["bot_thread"] = loop.run_in_executor(thread_pool, chat_bot)
+    # app["bot_thread"] = loop.run_in_executor(thread_pool, chat_bot)
     return app
 
 

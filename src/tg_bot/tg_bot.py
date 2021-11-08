@@ -8,7 +8,7 @@ from aiogram import Bot, Dispatcher, executor, types
 
 # Configure logging
 from settings import TG_NOTIFICATIONS_TOKEN
-from queries import get_receiver, update_receiver
+from tg_bot.queries import get_receiver, update_receiver
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -44,20 +44,20 @@ async def process_callback(callback_query: types.CallbackQuery):
     )
     if data == "1":
         await update_receiver(
-            tg_dialog_id=callback_query.from_user.id, send_notifications=True
+            tg_dialog_id=callback_query.message.chat.id, send_notifications=True
         )
         await bot.edit_message_text(
-            chat_id=callback_query.from_user.id,
+            chat_id=callback_query.message.chat.id,
             message_id=callback_query.message.message_id,
             text="Уведомления включены",
             reply_markup=keyboard_markup,
         )
     if data == "2":
         await update_receiver(
-            tg_dialog_id=callback_query.from_user.id, send_notifications=False
+            tg_dialog_id=callback_query.message.chat.id, send_notifications=False
         )
         await bot.edit_message_text(
-            chat_id=callback_query.from_user.id,
+            chat_id=callback_query.message.chat.id,
             message_id=callback_query.message.message_id,
             text="Уведомления выключены",
             reply_markup=keyboard_markup,
