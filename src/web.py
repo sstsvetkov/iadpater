@@ -530,7 +530,7 @@ async def init_app():
     loop = asyncio.get_event_loop()
     thread_pool = ThreadPoolExecutor(2)
     app["itil_feedback_thread"] = loop.create_task(itil_feedback())
-    # app["bot_thread"] = loop.run_in_executor(thread_pool, chat_bot)
+    app["bot_thread"] = loop.run_in_executor(thread_pool, chat_bot)
     return app
 
 
