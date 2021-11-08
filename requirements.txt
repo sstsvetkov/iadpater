@@ -23,3 +23,4 @@ typing-extensions==3.7.4.3
 urllib3==1.26.3
 yarl==1.6.3
 cryptography
+aiogram==2.15
