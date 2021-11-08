@@ -80,6 +80,8 @@ async def main():
 
     try:
         await dp.start_polling()
+    except Exception:
+        logging.exception("Error")
     finally:
         await dp.storage.close()
         await dp.storage.wait_closed()
