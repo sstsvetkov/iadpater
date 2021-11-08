@@ -3,7 +3,6 @@ import base64
 import json
 import os
 import re
-from concurrent.futures.thread import ThreadPoolExecutor
 from hashlib import sha256
 from urllib.parse import unquote
 
@@ -14,10 +13,11 @@ from openpyxl import load_workbook
 from requests_ntlm import HttpNtlmAuth
 
 from mailadapter import send_to_user
+from models import Database
 from settings import *
+from tg_bot.tg_bot import main as chat_bot
 from web import Incident
 from web.queries import get, add_phone, update_incident, get_incident
-from tg_bot.tg_bot import main as chat_bot
 
 
 def laps(server, user, password, computer_name):
@@ -513,7 +513,7 @@ async def itil_feedback():
 
 async def init_app():
     app = web.Application()
-    # db = await Database.get_connection_pool()
+    db = await Database.get_connection_pool()
     # app["db"] = db
     app.add_routes([web.post("/laps", handle_laps)])
     app.add_routes([web.post("/bio", handle_bio)])
@@ -528,9 +528,8 @@ async def init_app():
     app.add_routes([web.post("/itil-create-incident", handle_create_incident)])
 
     loop = asyncio.get_event_loop()
-    thread_pool = ThreadPoolExecutor(2)
     app["itil_feedback_thread"] = loop.create_task(itil_feedback())
-    # app["bot_thread"] = loop.create_task(chat_bot())
+    app["bot_thread"] = loop.create_task(chat_bot())
     return app
 
 
