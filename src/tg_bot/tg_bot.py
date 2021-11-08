@@ -8,6 +8,7 @@ import asyncio
 from aiogram import Bot, Dispatcher, executor, types
 
 # Configure logging
+from models import Database
 from settings import TG_NOTIFICATIONS_TOKEN
 from tg_bot.queries import get_receiver, update_receiver
 
@@ -64,7 +65,7 @@ async def process_callback(callback_query: types.CallbackQuery):
             )
 
 
-def main():
+async def main():
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
