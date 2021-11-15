@@ -514,7 +514,7 @@ async def itil_feedback():
 async def init_app():
     app = web.Application()
     db = await Database.get_connection_pool()
-    # app["db"] = db
+    app["db"] = db
     app.add_routes([web.post("/laps", handle_laps)])
     app.add_routes([web.post("/bio", handle_bio)])
     app.add_routes([web.post("/basic-auth", handle_basic_auth)])
