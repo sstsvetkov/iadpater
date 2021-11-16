@@ -487,15 +487,25 @@ async def itil_feedback():
                         res = await get_incident(incident_uid=uid)
                         if res:
                             if res["status"] != status:
-                                if status == "На уточнении":
+                                if status == "На уточнении" or status:
                                     send_to_user(
                                         message=f"Обращение {incident['Number']}: {status}",
                                         user_id=res["user_tg_id"],
                                     )
 
                                 if status == "Выполнено. Требует подтверждения":
+                                    response = requests.get(
+                                        f"{os.environ.get('ITIL_API_URL')}/getDetailInfoIncindent/{uid}",
+                                        auth=(
+                                            os.environ.get("ITIL_LOGIN"),
+                                            os.environ.get("ITIL_PASS"),
+                                        ),
+                                    )
+                                    response_json = response.json()
+                                    solution = response_json.get("Solution", "")
                                     send_to_user(
-                                        message=f"Обращение {incident['Number']}: {status}",
+                                        message=f"Обращение {incident['Number']}: {status}\nРешение: {solution}\n"
+                                        f'Что бы подтвердить или отклонить выполнение обращения, напишите "Обращения Итилиум"',
                                         user_id=res["user_tg_id"],
                                     )
                                 await update_incident(
