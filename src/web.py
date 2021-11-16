@@ -487,7 +487,7 @@ async def itil_feedback():
                         res = await get_incident(incident_uid=uid)
                         if res:
                             if res["status"] != status:
-                                if status == "На уточнении" or status:
+                                if status == "На уточнении":
                                     send_to_user(
                                         message=f"Обращение {incident['Number']}: {status}",
                                         user_id=res["user_tg_id"],
