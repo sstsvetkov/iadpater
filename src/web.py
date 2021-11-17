@@ -210,7 +210,11 @@ async def handle_get_incidents(request):
         )
         response_text = response.content.decode("utf-8")
         if done:
-            incidents = json.loads(response_text)
+            try:
+                incidents = json.loads(response_text)
+            except json.decoder.JSONDecodeError:
+                response_text = response.content.decode("utf-8")
+                incidents = json.loads(response_text)
             incidents = [
                 incident
                 for incident in incidents
