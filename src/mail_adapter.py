@@ -6,6 +6,7 @@ from email.parser import BytesParser
 from mailadapter import *
 from mailadapter.user_info import Record, States
 from settings import *
+from tg_bot import get_active_receivers
 
 email_guide = """
 ОТКРЫТИЕ ПОЧТЫ НЕ ИЗ СЕТИ ДИКСИ:
@@ -49,7 +50,22 @@ async def read_messages(imap):
                 await handle_order_create(record)
             except ValueError:
                 pass
+        elif "назначено на вашу рабочую группу" in subject:
+            body = get_email_body(msg)
+            try:
+                msg = parse_work_group_notification(body)
+                await handle_work_group_notification(msg)
+            except ValueError:
+                pass
     imap.expunge()
+
+
+async def handle_work_group_notification(msg: str):
+    receivers = await get_active_receivers()
+    for receiver in receivers:
+        send_to_user(
+            user_id=receiver["tg_dialog_id"], message=msg, bot=Bots.NOTIFICATIONS
+        )
 
 
 async def handle_order_closed(record: Record):

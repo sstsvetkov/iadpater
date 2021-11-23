@@ -56,6 +56,10 @@ def parse_email_created(body: str) -> Record or ValueError:
         raise ValueError from e
 
 
+def parse_work_group_notification(body: str) -> str or ValueError:
+    return body
+
+
 def get_email_body(msg):
     body = None
     if msg.is_multipart():
@@ -90,6 +94,10 @@ def send_mail(toaddrs, subject, text):
         server = smtplib.SMTP(IMAP_HOST)
         server.sendmail(fromaddr, toaddrs, msg.as_string())
         server.quit()
-        logging.debug(f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}")
+        logging.debug(
+            f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}"
+        )
     except Exception as e:
-        logging.exception(f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}")
+        logging.exception(
+            f"SMTP SEND - From: {fromaddr} To: {toaddrs} Subject: {subject} Msg: {text}"
+        )

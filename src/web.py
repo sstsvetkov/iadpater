@@ -213,8 +213,10 @@ async def handle_get_incidents(request):
             try:
                 incidents = json.loads(response_text)
             except json.decoder.JSONDecodeError:
-                response_text = response.content.decode("utf-8-sig")
-                incidents = json.loads(response_text)
+                logging.exception(
+                    f"Failed to parse itil response.\r Raw: {response_text}"
+                )
+                return web.Response(status=500)
             incidents = [
                 incident
                 for incident in incidents

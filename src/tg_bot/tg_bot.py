@@ -74,8 +74,8 @@ async def main():
     bot["db"] = db
     dp = Dispatcher(bot)
 
-    dp.register_message_handler(start_cmd_handler, commands="start"),
-    dp.register_message_handler(start_cmd_handler, commands="help")
+    dp.register_message_handler(start_cmd_handler, commands=["start", "help"]),
+    # dp.register_message_handler(start_cmd_handler, commands="help")
     dp.register_callback_query_handler(process_callback)
 
     try:

@@ -26,3 +26,13 @@ async def get_receiver(tg_dialog_id: str):
             """,
             str(tg_dialog_id),
         )
+
+
+async def get_active_receivers():
+    pool = await Database.get_connection_pool()
+    async with pool.acquire() as con:
+        return await con.fetch(
+            """
+            SELECT * FROM receivers WHERE send_notifications = TRUE
+            """
+        )

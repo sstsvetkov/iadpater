@@ -1,26 +1,36 @@
 import logging
+from enum import Enum
 from typing import Tuple
 
 import requests
 
 from mailadapter.utils import parse_phone
-from settings import AUTOFAQ_SERVICE_HOST, DEBUG
+from settings import AUTOFAQ_SERVICE_HOST, DEBUG, TG_NOTIFICATIONS_TOKEN, BOT_TOKEN
 
 
-def send_to_user(user_id, message, image=None):
+class Bots(Enum):
+    DEFAULT = 1
+    NOTIFICATIONS = 2
+
+
+def send_to_user(user_id, message, image=None, bot=Bots.DEFAULT):
     if DEBUG:
         user_id = 696641812
         logging.debug(f"SEND TO USER - User id: {user_id} Message: {message}")
         return True
     try:
+        if bot == Bots.NOTIFICATIONS:
+            token = TG_NOTIFICATIONS_TOKEN
+        else:
+            token = BOT_TOKEN
         if image is None:
             response = requests.get(
-                f"https://api.telegram.org/bot1335882907:AAEBfQIQESeXkRCWMsrIwkoUr8NLhK9S7Wc/sendMessage?chat_id={user_id}&text={message}"
+                f"https://api.telegram.org/bot{token}/sendMessage?chat_id={user_id}&text={message}"
             )
         else:
             files = {"photo": open(image, "rb")}
             response = requests.post(
-                f"https://api.telegram.org/bot1335882907:AAEBfQIQESeXkRCWMsrIwkoUr8NLhK9S7Wc/sendPhoto?chat_id={user_id}&caption={message}",
+                f"https://api.telegram.org/bot{token}/sendPhoto?chat_id={user_id}&caption={message}",
                 files=files,
             )
 

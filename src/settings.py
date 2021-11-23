@@ -14,6 +14,7 @@ DELAY = int(environ.get("DELAY", 60))
 AUTOFAQ_SERVICE_HOST = environ.get("AUTOFAQ_SERVICE_HOST")
 ITIL_EMAIL = environ.get("ITIL_EMAIL")
 TG_NOTIFICATIONS_TOKEN = environ.get("TG_NOTIFICATIONS_TOKEN")
+BOT_TOKEN = environ.get("BOT_TOKEN")
 
 if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
