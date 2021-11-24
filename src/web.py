@@ -527,6 +527,21 @@ async def itil_feedback():
         await asyncio.sleep(300)
 
 
+# Каждые 35 минут отправляет простой запрос в Итилиум, для того что бы учётка оставалась активной
+async def itil_update_connection():
+    while True:
+        response = requests.get(
+            f"{os.environ.get('ITIL_API_URL')}authenticate",
+            auth=(os.environ.get("ITIL_LOGIN"), os.environ.get("ITIL_PASS")),
+        )
+        if response.status_code != 200:
+            logging.error(
+                f"ERROR itil update connection. Response status: {response.status_code}"
+            )
+
+        await asyncio.sleep(2100)
+
+
 async def init_app():
     app = web.Application()
     db = await Database.get_connection_pool()
@@ -544,8 +559,9 @@ async def init_app():
     app.add_routes([web.post("/itil-create-incident", handle_create_incident)])
 
     loop = asyncio.get_event_loop()
-    app["itil_feedback_thread"] = loop.create_task(itil_feedback())
-    app["bot_thread"] = loop.create_task(chat_bot())
+    app["itil_feedback_task"] = loop.create_task(itil_feedback())
+    app["bot_task"] = loop.create_task(chat_bot())
+    app["itil_update_connection_task"] = loop.create_task(itil_update_connection())
     return app
 
 
