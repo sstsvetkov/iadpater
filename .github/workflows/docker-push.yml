@@ -27,4 +27,4 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: averniko/iadapter:latest
+          tags: dixyiadapter/iadapter:latest
