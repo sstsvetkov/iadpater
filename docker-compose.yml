@@ -2,7 +2,7 @@ version: '2.2'
 
 services:
   web:
-    image: averniko/iadapter:latest
+    image: dixyiadapter/iadapter:latest
     container_name: iadapter_api
     restart: unless-stopped
     env_file:
@@ -23,7 +23,7 @@ services:
     volumes:
     - ./init.sql:/docker-entrypoint-initdb.d/init.sql
   email_adapter:
-    image: averniko/iadapter:latest
+    image: dixyiadapter/iadapter:latest
     restart: unless-stopped
     container_name: iadapter_email_adapter
     env_file:
