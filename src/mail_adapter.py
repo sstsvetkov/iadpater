@@ -50,7 +50,11 @@ async def read_messages(imap):
                 await handle_order_create(record)
             except ValueError:
                 pass
-        elif "назначено на вашу рабочую группу" in subject:
+        elif (
+            "назначено на вашу рабочую группу" in subject
+            or "Возобновлен наряд" in subject
+            or "Назначение наряда рабочей группе" in subject
+        ):
             body = get_email_body(msg)
             try:
                 msg = parse_work_group_notification(body)
