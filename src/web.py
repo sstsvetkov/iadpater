@@ -118,15 +118,25 @@ async def handle_auth_get(request):
     user_info = {"state": False}
 
     conn = request.app["db"]
-    user = await conn.fetchrow(
-        """
-        SELECT * 
-        FROM users 
-        WHERE email = $1 OR phone = $2
-    """,
-        email,
-        phone,
-    )
+    user = None
+    if email:
+        user = await conn.fetchrow(
+            """
+            SELECT * 
+            FROM users 
+            WHERE email = $1
+        """,
+            email,
+        )
+    if phone:
+        user = await conn.fetchrow(
+            """
+            SELECT * 
+            FROM users 
+            WHERE phone = $1
+        """,
+            phone,
+        )
     if user:
         user_info["state"] = True
         user_info["full_name"] = user["full_name"]
@@ -478,6 +488,9 @@ async def handle_create_incident(request):
 
 
 async def itil_feedback():
+    # Отправка обратной связи из Итилиума в Телеграм
+    # Каждые 300 секунд запрашивает у Итилиума обращения с пометкой "Обращение из ТГ".
+    # Если у обращения поменялся статус, отправляет соответствующее сообщение создателю обращения в ТГ.
     while True:
         try:
             response = requests.get(
@@ -527,8 +540,9 @@ async def itil_feedback():
         await asyncio.sleep(300)
 
 
-# Каждые 35 минут отправляет простой запрос в Итилиум, для того что бы учётка оставалась активной
 async def itil_update_connection():
+    # Каждые 35 минут отправляет простой запрос в Итилиум, для того что бы учётка оставалась активной
+    # Не используется, поскольку активность обновляется в itil_feedback
     while True:
         response = requests.get(
             f"{os.environ.get('ITIL_API_URL')}authenticate",
@@ -561,7 +575,7 @@ async def init_app():
     loop = asyncio.get_event_loop()
     app["itil_feedback_task"] = loop.create_task(itil_feedback())
     app["bot_task"] = loop.create_task(chat_bot())
-    app["itil_update_connection_task"] = loop.create_task(itil_update_connection())
+    # app["itil_update_connection_task"] = loop.create_task(itil_update_connection())
     return app
 
 
